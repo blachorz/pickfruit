@@ -85,17 +85,13 @@ body.large-mode {
     transition: none !important;
 }
 
-/* 長輩模式下特定元素無過渡（避免兩階段感），但保留泡泡圖按鈕動效和 tooltip 脈衝動畫 */
+/* 長輩模式下特定元素無過渡（避免兩階段感） */
 body.large-mode .text-mode-desc,
 body.large-mode .text-month-btn,
-body.large-mode .text-\[10px\]:not(.text-month-btn):not(.ignore-scaling *):not(.animate-pulse),
-body.large-mode .text-xs:not(.ignore-scaling *):not(.animate-pulse),
-body.large-mode .text-\[11px\]:not(.animate-pulse),
-body.large-mode .text-helper-refined,
-body.large-mode .text-month-refined {
+body.large-mode .text-\[10px\]:not(.text-month-btn):not(.ignore-scaling *):not(.ignore-scaling):not(.animate-pulse),
+body.large-mode .text-xs:not(.ignore-scaling *):not(.ignore-scaling):not(.animate-pulse),
+body.large-mode .text-\[11px\]:not(.animate-pulse) {
     transition: none !important;
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
 }
 
 /* 🔥 月份按鈕專屬設定 - 固定高度確保布局穩定 */
@@ -114,10 +110,9 @@ body.large-mode button.text-month-btn {
     height: 29px !important;
 }
 
-
-/* 其他輔助文字的插值修正 - 排除副標題 */
-body.large-mode .text-\[10px\]:not(.subtitle-fixed), 
-body.large-mode .text-xs:not(.subtitle-fixed) { 
+/* 其他輔助文字的插值修正 - 排除副標題與免疫區 */
+body.large-mode .text-\[10px\]:not(.subtitle-fixed):not(.ignore-scaling):not(.ignore-scaling *), 
+body.large-mode .text-xs:not(.subtitle-fixed):not(.ignore-scaling):not(.ignore-scaling *) { 
     font-size: 15px !important; 
     line-height: 22.5px !important;
 }
@@ -132,41 +127,36 @@ body.large-mode .text-mode-desc {
     line-height: 21px !important; 
 }
 
-body.large-mode .text-helper-refined { 
-    font-size: 13px !important; 
-    line-height: 18.2px !important; 
-    font-weight: 700 !important; 
-}
-
-body.large-mode .text-month-refined { 
-    font-size: 13px !important; 
-    line-height: 19.5px !important; 
-}
-
-body.large-mode .ignore-scaling.text-sm { 
-    font-size: 14px !important; 
-    line-height: 20px !important;
-}
-
 /* 🔥 [關鍵修正] 絕對免疫區 */
-body.large-mode .ignore-scaling { transform: none !important; }
-
-/* 🔥 Tooltip 動畫文字 - 保留脈衝動效（使用更高優先級） */
-body.large-mode .animate-pulse,
-body.large-mode * .animate-pulse,
-body.large-mode * * .animate-pulse {
-    animation-name: pulse !important;
-    animation-duration: 2s !important;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1) !important;
-    animation-iteration-count: infinite !important;
+body.large-mode .ignore-scaling,
+body.large-mode .ignore-scaling * { 
+    transform: none !important; 
 }
 
+body.large-mode .ignore-scaling,
+body.large-mode .ignore-scaling.text-\[10px\],
 body.large-mode .ignore-scaling .text-\[10px\] { 
     font-size: 10px !important; 
     line-height: 15px !important; 
 }
 
+body.large-mode .ignore-scaling.text-xs,
 body.large-mode .ignore-scaling .text-xs { 
     font-size: 12px !important; 
     line-height: 16px !important; 
+}
+
+body.large-mode .ignore-scaling.text-sm,
+body.large-mode .ignore-scaling .text-sm { 
+    font-size: 14px !important; 
+    line-height: 20px !important;
+}
+
+/* 🔥 Tooltip 動畫文字 - 保留脈衝動效 */
+body.large-mode .animate-pulse,
+body.large-mode * .animate-pulse {
+    animation-name: pulse !important;
+    animation-duration: 2s !important;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1) !important;
+    animation-iteration-count: infinite !important;
 }

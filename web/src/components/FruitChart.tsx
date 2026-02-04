@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Fruit, supabase } from '@/utils/supabase';
@@ -39,6 +39,7 @@ interface FruitChartProps {
 
 export default function FruitChart({ initialFruits }: FruitChartProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const monthSelectorRef = useRef<HTMLDivElement>(null);
   // 使用固定值避免布局抖動，讓 CSS 處理響應式行為
@@ -134,9 +135,15 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
   const handleFruitClick = (fruit: Fruit) => {
       // If locked, navigate
       if (lockedFruit?.id === fruit.id) {
-          router.push(`/fruit/${fruit.slug || fruit.id}`);
+          const url = `/fruit/${fruit.slug || fruit.id}`;
+          router.prefetch(url);
+          startTransition(() => {
+              router.push(url);
+          });
       } else {
           setLockedFruit(fruit);
+          // Prefetch when first clicked (locked) to speed up potential next click
+          router.prefetch(`/fruit/${fruit.slug || fruit.id}`);
       }
   };
 
@@ -538,7 +545,7 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                                 lockedFruit
                                     ? (lockedFruit.id === fruit.id || hoveredFruit?.id === fruit.id)
                                         ? '!opacity-100 scale-110 shadow-2xl border-white !z-50'
-                                        : 'opacity-[0.15] scale-90 border-transparent grayscale blur-[1px]'
+                                        : 'opacity-[0.15] scale-90 border-transparent grayscale'
                                     : (hoveredFruit?.id === fruit.id)
                                         ? '!opacity-100 scale-110 shadow-xl border-white !z-50'
                                         : 'opacity-40 shadow-sm border border-stone-400/25 scale-100'
@@ -677,7 +684,7 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                             </h2>
                             <button 
                                 onClick={() => setMonth(new Date().getMonth() + 1)}
-                                className="flex items-center gap-1 text-[10px] font-black text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full hover:bg-indigo-100 transition-colors"
+                                className="flex items-center gap-1 text-[10px] font-black text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full hover:bg-indigo-100 transition-colors ignore-scaling"
                             >
                                 <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
                                 切換即看當季盛產
@@ -752,12 +759,21 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                                 >
                                     {group.name}
                                 </h3>
-                                <div className="grid grid-cols-2 gap-2 mt-3">
-                                    {group.items.map((fruit: any) => (
-                                        <button key={fruit.id} onClick={() => router.push(`/fruit/${fruit.slug || fruit.id}`)} className={cn(
-                                            "group/card flex items-center gap-2 p-2 rounded-xl border transition-all text-left relative overflow-hidden active:scale-95",
-                                            fruit.score < 4 ? 'border-slate-100 bg-slate-50/50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100' : fruit.properties?.is_premium ? 'border-yellow-300 bg-yellow-50' : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-indigo-200'
-                                        )}>
+                                 <div className="grid grid-cols-2 gap-2 mt-3">
+                                     {group.items.map((fruit: any) => (
+                                         <button key={fruit.id} 
+                                            onClick={() => {
+                                                const url = `/fruit/${fruit.slug || fruit.id}`;
+                                                router.prefetch(url);
+                                                startTransition(() => {
+                                                    router.push(url);
+                                                });
+                                            }} 
+                                            className={cn(
+                                             "group/card flex items-center gap-2 p-2 rounded-xl border transition-all text-left relative overflow-hidden active:scale-95",
+                                             isPending ? "opacity-50 cursor-wait" : "",
+                                             fruit.score < 4 ? 'border-slate-100 bg-slate-50/50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100' : fruit.properties?.is_premium ? 'border-yellow-300 bg-yellow-50' : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-indigo-200'
+                                         )}>
                                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: fruit.color }}></div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-xs font-bold text-slate-700 truncate group-hover/card:text-indigo-600 transition-colors">{fruit.name}</p>
