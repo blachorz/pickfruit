@@ -57,15 +57,15 @@ async function getRecommendedFruits(currentFruit: Fruit) {
             const enrichedFruit = {
                 ...f,
                 properties: {
-                    ...f.properties,
+                    ...(f.properties || {}),
                     recommendReason: reason
                 }
-            };
+            } as any;
             
             return { fruit: enrichedFruit, matchScore: points };
         })
         .filter((item) => item !== null)
-        .map(item => item!)
+        .map(item => item as { fruit: Fruit, matchScore: number })
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, 6)
         .map(item => item.fruit);
