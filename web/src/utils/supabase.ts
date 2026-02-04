@@ -40,6 +40,7 @@ export type Fruit = {
     safety_warning?: string;
     relief_symptoms?: string;
     relief_mechanism?: string;
+    recommendReason?: string; // 加入此欄位以符合詳細頁推薦邏輯
     
     // Misc
     skin_edible?: string;
