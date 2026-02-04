@@ -1,8 +1,8 @@
 import { supabase } from '@/utils/supabase';
 import FruitChart from '@/components/FruitChart';
 
-// Force dynamic rendering so we always get fresh data
-export const dynamic = 'force-dynamic';
+// Revalidate every hour
+export const revalidate = 3600;
 
 export default async function Home() {
   const { data: fruits, error } = await supabase

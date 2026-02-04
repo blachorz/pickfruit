@@ -3,6 +3,17 @@ import { notFound } from 'next/navigation';
 import { Fruit, supabase } from '@/utils/supabase';
 import { FruitDetail } from '@/components/FruitDetail';
 
+// Revalidate every day
+export const revalidate = 86400;
+
+// Generate static params for all fruits to enable full SSG
+export async function generateStaticParams() {
+    const { data: fruits } = await supabase.from('fruits').select('slug');
+    return (fruits || []).map((fruit) => ({
+        slug: fruit.slug,
+    }));
+}
+
 interface Props {
     params: { slug: string };
 }

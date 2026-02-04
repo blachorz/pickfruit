@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import { supabase } from '@/utils/supabase';
 import FruitGuide from '@/components/FruitGuide';
 
-// Force dynamic rendering so we always get fresh data
-export const dynamic = 'force-dynamic';
+// Revalidate every day
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: '挑選指南 - 水果呷對時',
