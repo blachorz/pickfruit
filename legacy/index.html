@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>水果呷對時 🍎</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  
+  <!-- 🔥 1. Preconnect: 提早與 CDN 握手 -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+
+  <!-- 🔥 2. Critical CSS: 核心樣式寫死，不再依賴 Tailwind 初始化 -->
+  <style>
+    /* 變數定義：讓背景色在 Tailwind 載入前就生效 */
+    :root {
+      --bg-slate-50: #f8fafc;
+      --text-slate-800: #1e293b;
+      --indigo-600: #4f46e5;
+    }
+    
+    /* 核心重置：防止 FOUC (樣式閃爍) */
+    body {
+      background-color: var(--bg-slate-50);
+      color: var(--text-slate-800);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior: none; 
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Alpine 尚未載入前隱藏元素 */
+    [x-cloak] { display: none !important; }
+
+    /* --- 🏁 啟動遮罩 (Loading Curtain) --- */
+    /* 完全不依賴 Tailwind，確保 0ms 渲染 */
+    #app-loading-curtain {
+      position: fixed; inset: 0; z-index: 9999;
+      background-color: #ffffff; /* 或 var(--bg-slate-50) */
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.6s ease-out, visibility 0.6s;
+    }
+    
+    /* 純 CSS 轉圈動畫 */
+    .native-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e2e8f0; 
+      border-top-color: var(--indigo-600); 
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* 淡出狀態 */
+    .fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    /* 滑桿與長輩模式樣式 (保留原樣) */
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; height: 24px; width: 24px;
+      border-radius: 50%; background: #4F46E5; margin-top: -10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%; height: 4px; background: #E5E7EB; border-radius: 2px;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* --- 👴 長輩模式 (Senior Mode) 設定 --- */
+    body.large-mode { font-size: 18px; }
+    
+    /* 一般文字放大邏輯 */
+    body.large-mode .text-\[10px\], body.large-mode .text-xs { font-size: 15px !important; line-height: 1.5 !important; }
+    body.large-mode .text-\[11px\] { font-size: 14px !important; line-height: 1.4 !important; }
+    
+    /* 🔥 [關鍵修正] 絕對免疫區 (座標標籤 & 挑選指南專用) */
+    body.large-mode .ignore-scaling { transform: none !important; }
+    
+    /* 座標標籤用 (維持極小) */
+    body.large-mode .ignore-scaling .text-\[10px\] { 
+        font-size: 10px !important; 
+        line-height: 1.5 !important; 
+    }
+    /* 挑選指南按鈕用 (維持原本 text-xs 大小) */
+    body.large-mode .ignore-scaling .text-xs { 
+        font-size: 12px !important; 
+        line-height: 1rem !important; 
+    }
+
+    /* 🎮 控制面板精修 */
+    body.large-mode .text-helper-refined { font-size: 13px !important; line-height: 1.4 !important; font-weight: 700 !important; }
+    body.large-mode .text-month-refined { font-size: 13px !important; line-height: 1.5 !important; }
+    body.large-mode .ignore-scaling.text-sm { font-size: 14px !important; line-height: 1.25rem !important; }
+  </style>
+
+  <!-- Google Tag Manager (保留) -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TRZVKXF8');</script>
+  <!-- End Google Tag Manager -->
+
+  <!-- 🔥 3. 腳本載入 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <script>
+    // SSR 資料注入
+    window.__SERVER_DATA__ = <?!= jsonPayload || '[]' ?>;
+  </script>
+</head>
+
+<body class="min-h-screen w-full lg:h-screen lg:w-screen lg:overflow-hidden select-none"
+      :class="{'large-mode': largeMode}" 
+      x-data="app()" x-init="initApp()">
+
+  <!-- GTM NoScript -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TRZVKXF8"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+  <!-- 🏁 [START] 啟動遮罩 (Critical CSS 渲染，速度最快) -->
+  <div id="app-loading-curtain">
+    <div class="native-spinner"></div>
+    <p style="margin-top: 16px; color: #64748b; font-size: 14px; font-weight: 500; font-family: sans-serif; letter-spacing: 1px;">
+      正在採集果園資訊...
+    </p>
+  </div>
+  <!-- 🏁 [END] 啟動遮罩 -->
+
+  <!-- 🔵 視圖 1: 首頁儀表板 (加入 x-cloak 防止閃爍) -->
+  <div x-show="view === 'home'" x-cloak
+     x-transition:enter="transition ease-out duration-300"
+     class="flex flex-col p-4 w-full max-w-6xl mx-auto relative font-sans min-h-screen lg:min-h-0 lg:h-full">
+    
+    <!-- Header -->
+    <div class="flex justify-between items-end mb-2 shrink-0 z-10">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+          水果呷對時</span> 🍎
+        </h1>
+        <p class="text-xs text-slate-500 font-medium">跟著季節吃，最對味</p>
+      </div>
+      <div class="flex items-center gap-1">
+         <div class="text-right leading-none">
+            <span class="text-4xl font-black text-indigo-600/90 tracking-tighter" x-text="month"></span>
+            <span class="text-lg font-bold text-slate-400">月</span>
+         </div>
+         <button @click="openSearch()" 
+                 class="flex items-center justify-center w-10 h-10 bg-white border border-indigo-100 shadow-sm rounded-full active:scale-95 transition hover:shadow-md hover:border-indigo-200 group mr-2">
+             <span class="text-xl group-hover:scale-110 transition-transform">🔍</span>
+         </button>
+         <!-- 挑選指南按鈕 (🔥 修改點：加入 ignore-scaling) -->
+         <button @click="openGuide()" 
+                 class="ignore-scaling flex items-center gap-1.5 bg-white border border-indigo-100 shadow-sm px-3 py-2 rounded-full active:scale-95 transition group hover:shadow-md hover:border-indigo-200 relative overflow-hidden">
+             <span class="text-base animate-bounce">📖</span>
+             <!-- 下面這個 text-xs 會被 CSS 鎖定在 12px -->
+             <span class="text-xs font-black bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent animate-pulse">挑選指南</span>
+             <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+         </button>
+      </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 lg:gap-4">
+      <!-- DOM-based Chart Area (Optimized V3) -->
+      <div class="ignore-scaling flex-1 bg-white rounded-[1.5rem] shadow-sm border border-slate-200 relative overflow-hidden min-h-[45vh] lg:min-h-0"
+           @click="clearLock()">
+        
+        <!-- HUD -->
+        <div class="absolute top-5 left-5 z-20 pointer-events-none select-none">
+            <h2 class="text-sm font-black text-slate-700 tracking-wide mb-0.5" 
+                x-text="{
+                    'daily': '日常選品：食材屬性',
+                    'sugar': '甜蜜陷阱：GI 值揭秘',
+                    'burden': '熱量精算',
+                    'tcm': '養生食療',
+                    'flavor': '酸甜光譜',
+                    'gift': '送禮攻略'
+                }[chartMode]"></h2>
+            <p class="text-[10px] font-bold text-slate-400"
+               x-text="{
+                   'daily': '糖度 / 寒燥',
+                   'sugar': '糖度 / 升糖指數',
+                   'burden': '熱量 / 升糖指數',
+                   'tcm': '寒燥 / 水分',
+                   'flavor': '糖度 / 酸度',
+                   'gift': '價位 / 香氣'
+               }[chartMode]"></p>
+        </div>
+
+        <!-- 🔥 [NEW] 補回：圓圈大小說明圖例 -->
+        <div class="absolute bottom-5 left-5 z-20 pointer-events-none select-none flex items-center gap-2 opacity-70">
+            <div class="flex items-end gap-0.5 mb-0.5">
+                <div class="w-1 h-1 rounded-full bg-slate-400"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+            </div>
+            <span class="text-[10px] font-bold text-slate-400">圓圈越大・越盛產</span>
+        </div>
+
+        <!-- 🔥 [MODIFIED] 2. 互動引導: 增加透明度 + 精簡文案 -->
+        <div class="absolute bottom-5 right-5 z-20 pointer-events-none transition-opacity duration-500"
+             :class="lockedFruit ? 'opacity-0' : 'opacity-100'">
+            <div class="bg-slate-900/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1.5 border border-white/10">
+                <span class="animate-bounce">👆</span>
+                <span>點擊圓圈</span>
+            </div>
+        </div>
+        
+        <!-- 🌊 象限浮水印容器 -->
+        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            
+            <!-- A. 日常模式浮水印 -->
+            <div x-show="chartMode === 'daily'" x-transition.opacity.duration.500 class="absolute inset-0">
+                <!-- (這裡放原本的那四個 溫潤養生/濃甜暖身... 的 div，完全不用動，只需複製進來) -->
+                 <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.04] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-900 leading-[0.8] tracking-tighter block whitespace-nowrap">溫潤<br><span class="ml-4">養生</span></span>
+                </div>
+                <!-- ... 其他三個 ... -->
+                 <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.04] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-rose-900 leading-[0.8] tracking-tighter block whitespace-nowrap">濃甜<br><span class="mr-4">暖身</span></span>
+                </div>
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.04] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-sky-900 leading-[0.8] tracking-tighter block whitespace-nowrap">清爽<br><span class="ml-4">解膩</span></span>
+                </div>
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.04] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-indigo-900 leading-[0.8] tracking-tighter block whitespace-nowrap">甜蜜<br><span class="mr-4">消暑</span></span>
+                </div>
+            </div>
+
+            <!-- B. 甜蜜陷阱模式浮水印 (New) -->
+            <div x-show="chartMode === 'sugar'" x-transition.opacity.duration.500 class="absolute inset-0" style="display: none;">
+                
+                <!-- 左上：不甜 + 高GI (隱形殺手 - 灰色/警示) -->
+                <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.05] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-slate-800 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        隱形<br><span class="ml-4">殺手</span>
+                    </span>
+                </div>
+
+                <!-- 右上：甜 + 高GI (紅燈警戒 - 紅色) -->
+                <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.05] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-red-900 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        紅燈<br><span class="mr-4">警戒</span>
+                    </span>
+                </div>
+
+                <!-- 左下：不甜 + 低GI (絕對安全 - 綠色) -->
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.05] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-emerald-900 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        絕對<br><span class="ml-4">安全</span>
+                    </span>
+                </div>
+
+                <!-- 右下：甜 + 低GI (天使甜點 - 金色/藍色) -->
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.05] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        天使<br><span class="mr-4">甜點</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- C. 熱量精算模式浮水印 (New) -->
+            <div x-show="chartMode === 'burden'" x-transition.opacity.duration.500 class="absolute inset-0" style="display: none;">
+                
+                <!-- 左上：高GI + 低卡 (嘴饞陷阱 - 灰色) -->
+                <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.05] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-slate-700 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        嘴饞<br><span class="ml-4">陷阱</span>
+                    </span>
+                </div>
+
+                <!-- 右上：高GI + 高卡 (熱量炸彈 - 紅色) -->
+                <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.05] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-red-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        熱量<br><span class="mr-4">炸彈</span>
+                    </span>
+                </div>
+
+                <!-- 左下：低GI + 低卡 (越吃越瘦 - 綠色) -->
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.05] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-emerald-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        越吃<br><span class="ml-4">越瘦</span>
+                    </span>
+                </div>
+
+                <!-- 右下：低GI + 高卡 (飽足好油 - 金色) -->
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.05] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-500 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        飽足<br><span class="mr-4">好油</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- D. 中醫食養羅盤模式浮水印 (New) -->
+            <div x-show="chartMode === 'tcm'" x-transition.opacity.duration.500 class="absolute inset-0" style="display: none;">
+                
+                <!-- 左上：寒 + 爆汁 (烈火剋星 - 冰藍) -->
+                <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.05] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-cyan-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        烈火<br><span class="ml-4">剋星</span>
+                    </span>
+                </div>
+
+                <!-- 右上：熱 + 爆汁 (容易上火 - 亮橘) -->
+                <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.05] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-orange-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        容易<br><span class="mr-4">上火</span>
+                    </span>
+                </div>
+
+                <!-- 左下：寒 + 紮實 (高纖淨化 - 草綠) -->
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.05] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-lime-700 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        高纖<br><span class="ml-4">淨化</span>
+                    </span>
+                </div>
+
+                <!-- 右下：熱 + 紮實 (能量溫補 - 暖棕) -->
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.05] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-800 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        能量<br><span class="mr-4">溫補</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- E. 禮贈攻略模式浮水印 (New) -->
+            <div x-show="chartMode === 'gift'" x-transition.opacity.duration.500 class="absolute inset-0" style="display: none;">
+                
+                <!-- 左上：便宜 + 香 (國民美味 - 桃紅) -->
+                <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.05] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-fuchsia-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        國民<br><span class="ml-4">美味</span>
+                    </span>
+                </div>
+
+                <!-- 右上：貴 + 香 (頂級禮贈 - 紫色) -->
+                <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.05] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-purple-800 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        頂級<br><span class="mr-4">禮贈</span>
+                    </span>
+                </div>
+
+                <!-- 左下：便宜 + 淡香 (居家常備 - 灰色) -->
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.05] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-slate-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        居家<br><span class="ml-4">常備</span>
+                    </span>
+                </div>
+
+                <!-- 右下：貴 + 淡香 (稀有獵奇 - 金色/棕色) -->
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.05] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-700 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        稀有<br><span class="mr-4">獵奇</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- F. 風味光譜模式浮水印 (New) -->
+            <div x-show="chartMode === 'flavor'" x-transition.opacity.duration.500 class="absolute inset-0" style="display: none;">
+                
+                <!-- 左上：低甜 + 高酸 (鮮酸生津 - 萊姆綠) -->
+                <div class="absolute top-8 left-6 lg:-top-4 lg:-left-4 opacity-[0.05] select-none -rotate-12 transform origin-top-left">
+                    <span class="text-6xl lg:text-9xl font-black text-lime-600 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        鮮酸<br><span class="ml-4">生津</span>
+                    </span>
+                </div>
+
+                <!-- 右上：高甜 + 高酸 (濃郁衝擊 - 橘黃) -->
+                <div class="absolute top-8 right-6 lg:-top-4 lg:-right-4 opacity-[0.05] select-none rotate-12 transform origin-top-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-amber-500 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        濃郁<br><span class="mr-4">衝擊</span>
+                    </span>
+                </div>
+
+                <!-- 左下：低甜 + 低酸 (恬淡輕盈 - 藍灰) -->
+                <div class="absolute bottom-12 left-6 lg:-bottom-2 lg:-left-2 opacity-[0.05] select-none rotate-12 transform origin-bottom-left">
+                    <span class="text-6xl lg:text-9xl font-black text-slate-400 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        恬淡<br><span class="ml-4">輕盈</span>
+                    </span>
+                </div>
+
+                <!-- 右下：高甜 + 低酸 (純粹蜜甜 - 粉紅) -->
+                <div class="absolute bottom-12 right-6 lg:-bottom-2 lg:-right-2 opacity-[0.05] select-none -rotate-12 transform origin-bottom-right text-right">
+                    <span class="text-6xl lg:text-9xl font-black text-pink-500 leading-[0.8] tracking-tighter block whitespace-nowrap">
+                        純粹<br><span class="mr-4">蜜甜</span>
+                    </span>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- 原有的背景網格 (保持不變) -->
+        <div class="absolute inset-0 grid grid-cols-2 grid-rows-2 opacity-30 pointer-events-none">
+            <div class="border-b border-r border-slate-300 bg-red-50/20"></div> 
+            <div class="border-b border-slate-300 bg-red-50/40"></div> 
+            <div class="border-r border-slate-300 bg-blue-50/20"></div> 
+            <div class="bg-blue-50/10"></div> 
+        </div>
+
+        <!-- 座標標籤 (🔥 修改點：移除 vertical-lr，統一為橫向膠囊) -->
+        <div class="absolute inset-0 pointer-events-none z-0 ignore-scaling">
+            <!-- Top Label (Y-Max) -->
+            <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full border shadow-sm flex items-center gap-1 transition-all duration-300"
+                  :class="{
+                      'daily': 'text-red-400 border-red-100',
+                      'sugar': 'text-rose-600 border-rose-200',
+                      'burden': 'text-rose-600 border-rose-200',
+                      'tcm': 'text-sky-500 border-sky-200',
+                      'flavor': 'text-lime-600 border-lime-200',
+                      'gift': 'text-purple-600 border-purple-200'
+                  }[chartMode]"
+                  x-text="{
+                      'daily': '🔥 燥熱',
+                      'sugar': '🔴 高 GI',
+                      'burden': '🔴 高 GI',
+                      'tcm': '💦 爆汁',
+                      'flavor': '🍋 極酸',
+                      'gift': '🌸 濃香'
+                  }[chartMode]"></span>
+            
+            <!-- Bottom Label (Y-Min) -->
+            <span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full border shadow-sm flex items-center gap-1 transition-all duration-300"
+                  :class="{
+                      'daily': 'text-blue-400 border-blue-100',
+                      'sugar': 'text-emerald-500 border-emerald-200',
+                      'burden': 'text-emerald-500 border-emerald-200',
+                      'tcm': 'text-stone-500 border-stone-200',
+                      'flavor': 'text-slate-400 border-slate-200',
+                      'gift': 'text-slate-400 border-slate-200'
+                  }[chartMode]"
+                  x-text="{
+                      'daily': '❄️ 寒涼',
+                      'sugar': '🟢 低 GI',
+                      'burden': '🟢 低 GI',
+                      'tcm': '🧱 紮實',
+                      'flavor': '🎐 清淡',
+                      'gift': '🍃 淡雅'
+                  }[chartMode]"></span>
+            
+            <!-- Left Label (X-Min) - 🔥 改為橫向膠囊，位置微調至 left-2 -->
+            <span class="absolute top-1/2 left-2 -translate-y-1/2 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full border shadow-sm flex items-center gap-1 transition-all duration-300"
+                  :class="{
+                      'daily': 'text-slate-400 border-slate-100',
+                      'sugar': 'text-slate-400 border-slate-100',
+                      'burden': 'text-emerald-500 border-emerald-100',
+                      'tcm': 'text-blue-400 border-blue-100',
+                      'flavor': 'text-slate-400 border-slate-100',
+                      'gift': 'text-slate-500 border-slate-100'
+                  }[chartMode]"
+                  x-text="{
+                      'daily': '🌱 低糖',
+                      'sugar': '🌱 低糖',
+                      'burden': '♻️ 低卡',
+                      'tcm': '❄️ 寒涼',
+                      'flavor': '🌱 低糖',
+                      'gift': '💰 親民'
+                  }[chartMode]"></span>
+
+            <!-- Right Label (X-Max) - 🔥 改為橫向膠囊，位置微調至 right-2 -->
+            <span class="absolute top-1/2 right-2 -translate-y-1/2 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full border shadow-sm flex items-center gap-1 transition-all duration-300"
+                  :class="{
+                      'daily': 'text-pink-400 border-pink-100',
+                      'sugar': 'text-pink-400 border-pink-100',
+                      'burden': 'text-orange-500 border-orange-100',
+                      'tcm': 'text-red-400 border-red-100',
+                      'flavor': 'text-pink-400 border-pink-100',
+                      'gift': 'text-amber-500 border-amber-100'
+                  }[chartMode]"
+                  x-text="{
+                      'daily': '🍬 高糖',
+                      'sugar': '🍬 高糖',
+                      'burden': '🔺 高卡',
+                      'tcm': '🔥 燥熱',
+                      'flavor': '🍬 高糖',
+                      'gift': '💎 奢華'
+                  }[chartMode]"></span>
+        </div>
+
+        <!-- 氣泡與 Tooltip -->
+        <div class="absolute inset-6 z-10">
+            <template x-for="fruit in getChartItems()" :key="fruit.id">
+                <button 
+                    @click.stop="handleBubbleClick(fruit)" 
+                    @mouseenter="hoveredFruit = fruit"
+                    @mouseleave="hoveredFruit = null"
+                    class="group absolute rounded-full flex items-center justify-center transition-none lg:transition-all lg:duration-300 lg:ease-out focus:outline-none will-change-transform"
+                    :class="lockedFruit 
+                        ? (lockedFruit.id === fruit.id || hoveredFruit?.id === fruit.id)
+                            ? '!opacity-100 scale-110 shadow-2xl border-white !z-50 blur-0 grayscale-0' 
+                            : 'opacity-20 grayscale-[0.8] scale-90 border-transparent lg:blur-[2px]' 
+                        : (hoveredFruit?.id === fruit.id)
+                            ? '!opacity-100 scale-110 shadow-xl border-white !z-50'
+                            : 'opacity-40 shadow-sm border border-stone-400/25 scale-100'"
+                    :style="`left: ${fruit.domX}%; bottom: ${fruit.domY}%; width: ${fruit.r}px; height: ${fruit.r}px; background-color: ${fruit.color}; transform: translate(-50%, 50%); z-index: ${Math.floor(100 - fruit.r)};`">
+                    <span x-show="fruit.r > 32" 
+                          class="text-white font-bold text-center leading-none px-0.5 break-words drop-shadow-md pointer-events-none transition-opacity duration-300"
+                          :class="(lockedFruit && lockedFruit.id !== fruit.id && hoveredFruit?.id !== fruit.id) ? 'opacity-0' : 'opacity-100'"
+                          :style="`font-size: ${Math.min(13, fruit.r * 0.25)}px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);`"
+                          x-text="fruit.name">
+                    </span>
+                </button>
+            </template>
+        </div>
+        
+        <!-- Global Floating Tooltip (保持不變) -->
+        <div class="absolute inset-6 z-[2000] pointer-events-none"
+            x-data="{ tooltipData: null, shouldShow: false }"
+            x-effect="const target = hoveredFruit || lockedFruit; if (target) { tooltipData = target; shouldShow = true; } else { shouldShow = false; }">
+            <div x-show="shouldShow && !searchOpen" 
+                class="absolute flex flex-col items-center transition-[bottom,transform] duration-300 ease-out will-change-transform" 
+                :style="`left: ${ tooltipData?.domX || 0 }%; bottom: ${ tooltipData?.domY || 0 }%; transform: translate(-50%, ${ (tooltipData?.domY > 60) ? `calc(100% + ${ (tooltipData?.r || 0)/2 }px + 12px)` : `calc(0% - ${ (tooltipData?.r || 0)/2 }px - 12px)` });`">
+                <div class="px-3 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xl border border-slate-700 relative whitespace-nowrap">
+                    <div class="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-800 rotate-45" :class="(tooltipData?.domY > 60) ? '-top-1.5 border-t border-l border-slate-700' : '-bottom-1.5 border-b border-r border-slate-700'"></div>
+                    <div class="flex items-center justify-center gap-1.5 z-10 relative">
+                        <span x-text="tooltipData?.name" class="text-sm"></span>
+                    </div>
+                    <div class="text-[9px] text-slate-400 font-normal mt-0.5 flex gap-2 justify-center items-center">
+                      <span x-text="(tooltipData?.brix || 0) + '° 糖'"></span>
+                      <span class="w-px h-2 bg-slate-600"></span>
+                      <span x-text="getSeasonLabel(tooltipData?.score)"></span>
+                    </div>
+                    <div class="pt-2 mt-2 border-t border-slate-600/50 animate-pulse text-[10px] text-slate-400 text-center font-medium leading-none">點擊查看詳情</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Controller Sidebar (Mobile: Flow / Desktop: Sticky) -->
+      <div class="w-full shrink-0 flex flex-col mt-0 lg:w-80 lg:h-full lg:flex-none lg:sticky lg:top-2 relative h-auto">
+        <div class="bg-white rounded-[1.5rem] shadow-lg shadow-indigo-100/50 border border-slate-100 relative overflow-visible flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+          
+          <!-- Toggle Switch (2x3 Grid) -->
+          <div class="px-4 pt-5 pb-1 z-20 bg-white">
+              <!-- 🔥 高度鎖定 h-[4.5rem] -->
+              <div class="relative bg-slate-100 p-1 rounded-xl grid grid-cols-3 gap-1 select-none font-bold text-xs shadow-inner h-[4.5rem]">
+                  
+                  <!-- 滑動背景塊 (保持不變) -->
+                  <div class="absolute w-[calc(33.33%-5px)] h-[calc(50%-6px)] bg-white rounded-lg shadow-sm border border-slate-200/50 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0"
+                       :class="{ 
+                           'top-1 left-1': chartMode === 'daily', 
+                           'top-1 left-[calc(33.33%+2px)]': chartMode === 'sugar', 
+                           'top-1 left-[calc(66.66%+2px)]': chartMode === 'burden',
+                           'top-[calc(50%+2px)] left-1': chartMode === 'tcm',
+                           'top-[calc(50%+2px)] left-[calc(33.33%+2px)]': chartMode === 'flavor',
+                           'top-[calc(50%+2px)] left-[calc(66.66%+2px)]': chartMode === 'gift'
+                       }"></div>
+                  
+                  <!-- Row 1 (🔥 Icon 加上 ignore-scaling, 文字改用 text-helper-refined) -->
+                  <button @click="chartMode = 'daily'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'daily' ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">🛒</span><span class="text-[11px] tracking-tight text-helper-refined">日常</span>
+                  </button>
+                  <button @click="chartMode = 'sugar'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'sugar' ? 'text-rose-600' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">⚠️</span><span class="text-[11px] tracking-tight text-helper-refined">陷阱</span>
+                  </button>
+                  <button @click="chartMode = 'burden'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'burden' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">🎯</span><span class="text-[11px] tracking-tight text-helper-refined">熱量</span>
+                  </button>
+
+                  <!-- Row 2 -->
+                  <button @click="chartMode = 'tcm'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'tcm' ? 'text-emerald-700' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">🌿</span><span class="text-[11px] tracking-tight text-helper-refined">食養</span>
+                  </button>
+                  <button @click="chartMode = 'flavor'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'flavor' ? 'text-lime-600' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">🍋</span><span class="text-[11px] tracking-tight text-helper-refined">風味</span>
+                  </button>
+                  <button @click="chartMode = 'gift'; clearLock()" class="relative z-10 flex flex-row items-center justify-center gap-1.5 rounded-lg transition-colors duration-300 active:scale-95" :class="chartMode === 'gift' ? 'text-purple-600' : 'text-slate-400 hover:text-slate-600'">
+                      <span class="text-sm ignore-scaling">🎁</span><span class="text-[11px] tracking-tight text-helper-refined">禮贈</span>
+                  </button>
+              </div>
+              
+              <!-- 模式說明 (文字也改用 text-helper-refined) -->
+              <div class="mt-1 h-4 grid place-items-center min-h-[1rem]">
+                   <span x-show="chartMode === 'daily'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-slate-400 font-medium col-start-1 row-start-1 block">依據「體質寒熱」挑選</span>
+                   <span x-show="chartMode === 'sugar'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-rose-400 font-medium col-start-1 row-start-1 block">高糖 ≠ 高 GI？揭露甜蜜陷阱</span>
+                   <span x-show="chartMode === 'burden'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-indigo-400 font-medium col-start-1 row-start-1 block">精算「熱量 (kcal) vs 升糖」</span>
+                   <span x-show="chartMode === 'tcm'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-emerald-600 font-medium col-start-1 row-start-1 block">東方智慧「寒熱 vs 水分滋潤」</span>
+                   <span x-show="chartMode === 'flavor'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-lime-600 font-medium col-start-1 row-start-1 block">口感光譜「酸度 vs 甜度」</span>
+                   <span x-show="chartMode === 'gift'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="text-[10px] text-helper-refined text-purple-500 font-medium col-start-1 row-start-1 block">送禮攻略「價格 vs 香氣」</span>
+               </div>
+          </div>
+          
+          <!-- Month Selection (Sticky Top) -->
+          <div class="p-4 shrink-0 z-30 bg-white/95 backdrop-blur-md sticky top-0 lg:static border-b border-slate-50 lg:border-none ignore-scaling"> 
+              <div class="flex items-center justify-between mb-2 px-1">
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">📅 產季月份</span>
+                  <div class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-50 border border-indigo-100 shadow-sm">
+                      <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                      </span>
+                      <span class="text-[9px] font-bold text-indigo-600 tracking-wide">切換即看當季盛產</span>
+                  </div>
+              </div>
+              <div class="grid grid-cols-6 gap-1.5 text-center select-none">
+                <template x-for="m in 12">
+                  <button @click="month = m" class="text-[10px] text-month-refined font-bold py-1 rounded-lg transition-all active:scale-95" :class="month === m ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-100'">
+                    <span x-text="m + '月'"></span>
+                  </button>
+                </template>
+              </div>
+          </div>
+          
+          <div class="h-px bg-slate-100 mx-4 shrink-0 hidden lg:block"></div>
+          
+          <!-- Control Panel (Checkbox) -->
+          <div class="py-4 flex flex-col shrink-0 bg-white z-20 px-4">
+            <div class="flex items-stretch">
+                <div class="flex-1 flex flex-col justify-center items-center border-r border-slate-100 pr-2">
+                   <span class="text-4xl font-black text-slate-800 tracking-tighter leading-none" x-text="getVisibleCount()"></span>
+                   <span class="text-[10px] font-bold text-slate-400 mt-1">本月推薦</span>
+                </div>
+                <div class="flex-1 pl-4 flex flex-col justify-center space-y-2">
+                    <label class="flex items-center justify-between cursor-pointer group">
+                        <span class="text-[10px] font-bold transition-colors" :class="onlyPremium ? 'text-yellow-600' : 'text-slate-500'">老饕必吃</span>
+                        <div class="relative ml-1">
+                            <input type="checkbox" class="sr-only" x-model="onlyPremium" @change="if(onlyPremium) onlyCommon = false">
+                            <div class="w-7 h-4 bg-slate-200 rounded-full transition-colors" :class="onlyPremium ? 'bg-yellow-400' : ''"></div>
+                            <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform" :class="onlyPremium ? 'translate-x-3' : ''"></div>
+                        </div>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer group">
+                        <span class="text-[10px] font-bold transition-colors" :class="onlyCommon ? 'text-teal-600' : 'text-slate-500'">大眾水果</span>
+                        <div class="relative ml-1">
+                            <input type="checkbox" class="sr-only" x-model="onlyCommon" @change="if(onlyCommon) onlyPremium = false">
+                            <div class="w-7 h-4 bg-slate-200 rounded-full transition-colors" :class="onlyCommon ? 'bg-teal-500' : ''"></div>
+                            <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform" :class="onlyCommon ? 'translate-x-3' : ''"></div>
+                        </div>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer group">
+                        <span class="text-[10px] font-bold transition-colors" :class="showOffSeason ? 'text-slate-600' : 'text-slate-400'">顯示非產季</span>
+                        <div class="relative ml-1">
+                            <input type="checkbox" class="sr-only" x-model="showOffSeason">
+                            <div class="w-7 h-4 bg-slate-200 rounded-full transition-colors" :class="showOffSeason ? 'bg-slate-500' : ''"></div>
+                            <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform" :class="showOffSeason ? 'translate-x-3' : ''"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+          </div>
+          
+          <div class="h-px bg-slate-100 mx-4 shrink-0 hidden lg:block"></div>
+          
+          <!-- Fruit List -->
+          <div class="flex-1 px-4 pb-4 space-y-4 relative z-10 bg-white rounded-b-[1.5rem] h-auto overflow-visible lg:h-full lg:overflow-y-auto lg:no-scrollbar">
+             <template x-if="getRenderData().length === 0">
+                <div class="text-center py-8 text-slate-300 text-xs">本月暫無推薦</div>
+            </template>
+            <template x-for="group in getGroupedFruits()" :key="group.name">
+                <div>
+                    <!-- 列表標題 Sticky: 手機版 top-[4.5rem] (Month height), 桌機版 top-0 -->
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 sticky top-[7.2rem] lg:top-0 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 pt-3 pb-2 z-20 w-[calc(100%+2rem)] -mx-4 px-4 shadow-sm"
+                        x-text="group.name">
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <template x-for="fruit in group.items" :key="fruit.id">
+                            <button @click="goToDetail(fruit.id)"
+                                    @mouseenter="hoveredFruit = fruit"
+                                    @mouseleave="hoveredFruit = null"
+                                    class="group/card flex items-center gap-2 p-2 rounded-xl border transition-all text-left relative overflow-hidden active:scale-95"
+                                    :class="fruit.score < 4 ? 'border-slate-100 bg-slate-50/50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100' : fruit.is_premium ? 'border-yellow-300 bg-yellow-50' : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-indigo-200'">
+                                <div class="w-2 h-2 rounded-full shrink-0" :style="`background-color: ${fruit.color}`"></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-slate-700 truncate group-hover/card:text-indigo-600 transition-colors" x-text="fruit.name"></p>
+                                    <div class="flex items-center text-[10px] leading-none mt-0.5">
+                                        <span class="text-slate-500 font-bold" x-text="fruit.brix + '°糖'"></span>
+                                        <span class="mx-1 text-slate-300">|</span>
+                                        <span class="font-bold" :class="fruit.energy_index > 0 ? 'text-rose-500' : 'text-sky-500'" x-text="getEnergyLabel(fruit.energy_index)"></span>
+                                    </div>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+          </div>
+        </div>
+        
+        <!-- 🔥 [修正點 3] Footer Signature: 移動到 Sidebar 容器內部最下方 -->
+        <div class="mt-3 shrink-0 pb-6 lg:pb-0 text-center select-text">
+            <div class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/50 border border-slate-100/50 backdrop-blur-sm shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:scale-105 group cursor-default">
+                <span class="text-[10px] font-medium text-slate-400 flex items-center gap-1">Made with <span class="text-[10px] animate-pulse">❤️</span> by <span class="font-black text-slate-600">Mike</span></span>
+                <span class="w-0.5 h-2 bg-slate-300 rounded-full"></span>
+                <a href="mailto:blachorz.m@gmail.com" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">✉️ <span class="underline decoration-slate-200 underline-offset-2 group-hover:decoration-indigo-200">Contact</span></a>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🟣 視圖 3: 挑選指南 (加入 x-cloak) -->
+  <div x-show="view === 'guide'" x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-y-full opacity-50"
+       x-transition:enter-end="translate-y-0 opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-y-0 opacity-100"
+       x-transition:leave-end="translate-y-full opacity-50"
+       class="fixed inset-0 z-[60] font-sans h-full w-full flex flex-col lg:items-center lg:justify-center lg:bg-slate-900/30 lg:backdrop-blur-sm lg:p-6">
+    <div class="absolute inset-0 hidden lg:block" @click="goHome()"></div>
+    <div class="flex-1 w-full h-full bg-slate-50 relative flex flex-col overflow-hidden lg:flex-none lg:h-auto lg:max-h-full lg:w-full lg:max-w-5xl lg:rounded-3xl lg:shadow-2xl z-10">
+        <div class="overflow-y-auto pb-20 no-scrollbar h-full">
+            <!-- 這裡省略部分重複代碼，保持原樣 -->
+            <div class="sticky top-0 z-50 pt-6 pb-4 px-4 bg-slate-50 shadow-sm transition-colors duration-500 h-[9rem] border-b"
+                 :class="guideMode === 'scenario' ? 'border-orange-100' : 'border-blue-100'">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-black tracking-tight flex items-center gap-2" :class="guideMode === 'scenario' ? 'text-orange-600' : 'text-blue-600'">
+                        <span x-text="guideMode === 'scenario' ? '生活情調' : '對症下藥'"></span>
+                        <span class="text-lg opacity-80" x-text="guideMode === 'scenario' ? '🎨' : '💊'"></span>
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right leading-none">
+                            <span class="text-xl font-black text-indigo-600/90 tracking-tighter" x-text="month"></span>
+                            <span class="text-xs font-bold text-slate-400">月</span>
+                        </div>
+                        <button @click="goHome()" class="p-2 bg-white rounded-full shadow-sm border border-slate-100 text-slate-400 active:scale-95 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative bg-slate-200/50 p-1 rounded-full flex font-bold text-xs select-none shadow-inner">
+                    <div class="absolute inset-y-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-out" :class="guideMode === 'scenario' ? 'left-1' : 'left-[calc(50%)]'"></div>
+                    <button @click="guideMode = 'scenario'; expandedItem = null" class="flex-1 relative z-10 py-2.5 text-center rounded-full transition-colors" :class="guideMode === 'scenario' ? 'text-orange-600' : 'text-slate-400'">生活情調</button>
+                    <button @click="guideMode = 'symptom'; expandedItem = null" class="flex-1 relative z-10 py-2.5 text-center rounded-full transition-colors" :class="guideMode === 'symptom' ? 'text-blue-600' : 'text-slate-400'">身體訊號</button>
+                </div>
+            </div>
+            <div class="flex flex-col min-h-[calc(100vh-14rem)] bg-slate-50 relative z-0">
+                <div class="px-4 py-4 space-y-6">
+                    <div x-show="guideMode === 'scenario'" x-transition:enter="transition ease-out duration-300">
+                        <template x-for="group in getScenarioGroups()" :key="group.name">
+                            <div class="mb-6">
+                                <h3 class="text-xs font-black text-orange-300 uppercase tracking-widest mb-3 ml-1" x-text="group.name"></h3>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <template x-for="item in group.items" :key="item.name">
+                                        <button @click="toggleFilter(item.name)"
+                                                class="relative p-4 rounded-2xl border text-left transition-all duration-300 group overflow-hidden"
+                                                :class="activeFilter === item.name ? 'bg-gradient-to-br from-orange-500 to-amber-500 border-orange-600 shadow-lg shadow-orange-200 scale-[1.02] ring-2 ring-offset-2 ring-orange-200' : 'bg-white border-slate-100 hover:border-orange-200 hover:shadow-md'">
+                                            <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-500" :class="activeFilter === item.name ? 'text-white' : 'text-slate-200 grayscale'">🎁</div>
+                                            <div class="relative z-10">
+                                                <div class="text-sm font-black mb-1" :class="activeFilter === item.name ? 'text-white' : 'text-slate-800'" x-text="item.name"></div>
+                                                <div class="text-[10px] leading-tight line-clamp-2" :class="activeFilter === item.name ? 'text-orange-100' : 'text-slate-400'" x-text="item.desc"></div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="guideMode === 'symptom'" x-transition:enter="transition ease-out duration-300">
+                         <template x-for="group in getSymptomGroups()" :key="group.name">
+                            <div class="mb-5">
+                                <h3 class="text-xs font-black text-blue-300 uppercase tracking-widest mb-3 ml-1" x-text="group.name"></h3>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="item in group.items" :key="item.name">
+                                        <button @click="toggleFilter(item.name)"
+                                                class="px-4 py-2 rounded-full text-xs font-bold border transition-all duration-200 active:scale-95"
+                                                :class="activeFilter === item.name ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'">
+                                            <span x-text="item.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <!-- 搜尋結果區塊 -->
+                <div id="guide-results" 
+                     class="sticky top-[8.5rem] z-30 backdrop-blur-md border-t border-b py-3 px-5 flex justify-between items-center shadow-sm transition-all duration-300"
+                     :class="activeFilter ? (guideMode === 'scenario' ? 'bg-orange-50/95 border-orange-200 shadow-orange-100/50' : 'bg-blue-50/95 border-blue-200 shadow-blue-100/50') : 'bg-slate-50/95 border-slate-200'">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg" x-text="activeFilter ? '🎯' : '👇'"></span>
+                        <span class="text-sm font-black transition-colors" :class="activeFilter ? (guideMode === 'scenario' ? 'text-orange-900' : 'text-blue-900') : 'text-slate-800'" x-text="activeFilter ? activeFilter : '請選擇上方項目'"></span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors" :class="activeFilter ? (guideMode === 'scenario' ? 'bg-orange-200 text-orange-800' : 'bg-blue-200 text-blue-800') : 'bg-slate-200 text-slate-600'" x-show="activeFilter" x-text="getActiveFilterResults().length + ' 種推薦'"></span>
+                </div>
+                <div id="guide-results-container" class="p-4 min-h-[30vh] bg-slate-100/50 scroll-mt-48">
+                    <div x-show="!activeFilter" class="flex flex-col items-center justify-center py-10 text-slate-300">
+                        <div class="text-4xl mb-2 animate-bounce">👆</div>
+                        <p class="text-xs font-bold">點擊上方卡片或標籤<br>查看專屬水果推薦</p>
+                    </div>
+                    <div x-show="activeFilter" class="grid grid-cols-1 gap-3">
+                        <template x-for="fruit in getActiveFilterResults()" :key="fruit.id">
+                            <button @click="goToDetail(fruit.id)"
+                                    class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group text-left">
+                                <div class="w-12 h-12 rounded-full shadow-inner border border-black/5 shrink-0" :style="`background-color: ${fruit.color}`"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm font-black text-slate-800" x-text="fruit.name"></span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="getCurrentScore(fruit) >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'" x-text="getSeasonLabel(getCurrentScore(fruit))"></span>
+                                    </div>
+                                    <div class="mt-0.5">
+                                        <p class="text-xs font-bold text-slate-600 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                                            <span x-text="guideMode === 'symptom' ? ('舒緩：' + fruit.relief_symptoms) : (fruit.tagline || fruit.scenario)"></span>
+                                        </p>
+                                        <p x-show="guideMode === 'symptom' && fruit.relief_mechanism" class="text-[10px] text-slate-400 mt-0.5 line-clamp-1 font-medium">
+                                            <span>作用：</span><span x-text="fruit.relief_mechanism"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <svg class="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                        </template>
+                        <div x-show="getActiveFilterResults().length === 0" class="text-center py-8 text-slate-400">
+                           <p class="text-sm">此項目暫無當季推薦水果 😅</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- 🟠 視圖 2: 詳情頁 (加入 x-cloak) -->
+  <div x-show="view === 'detail'" x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-y-full opacity-50"
+       x-transition:enter-end="translate-y-0 opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-y-0 opacity-100"
+       x-transition:leave-end="translate-y-full opacity-50"
+       class="fixed inset-0 z-[60] font-sans h-full w-full flex flex-col lg:items-center lg:justify-center lg:bg-slate-900/30 lg:backdrop-blur-sm lg:p-6">
+    <div class="absolute inset-0 hidden lg:block" @click="goHome()"></div>
+    <template x-if="activeFruit">
+      <div class="flex-1 w-full h-full bg-white relative flex flex-col overflow-hidden lg:flex-none lg:h-auto lg:max-h-full lg:w-full lg:max-w-5xl lg:rounded-3xl lg:shadow-2xl z-10">
+        <div id="detail-scroll-view" x-ref="detailContainer" class="flex-1 overflow-y-auto no-scrollbar relative bg-white pb-24">
+          <div class="relative w-full pt-4 pb-6 px-5 overflow-hidden shrink-0 bg-gradient-to-b from-slate-50 via-slate-50 to-white">
+            <button @click="goHome()" class="absolute top-4 left-4 bg-white/60 backdrop-blur-md p-2 rounded-full shadow-sm hover:bg-white transition z-50 active:scale-95 border border-white/50">
+              <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button @click="shareCurrentFruit()" class="absolute top-4 right-4 bg-white/60 backdrop-blur-md p-2 pl-3 pr-3 rounded-full shadow-sm hover:bg-white transition z-50 active:scale-95 border border-white/50 flex items-center gap-1.5 group">
+              <span class="text-xs font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">分享</span>
+              <svg class="w-4 h-4 text-slate-700 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+              </svg>
+            </button>
+            <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full blur-[80px] opacity-40 pointer-events-none mix-blend-multiply" :style="`background-color: ${activeFruit.color}`"></div>
+            <div class="relative z-10 mt-10 flex flex-col items-start">
+              <div class="flex flex-wrap gap-2 mb-3 opacity-90">
+                <span class="px-2.5 py-1 bg-white/70 backdrop-blur-sm text-slate-600 text-[10px] font-black tracking-wide rounded-md border border-slate-200/50 shadow-sm uppercase" x-text="activeFruit.category"></span>
+                <template x-if="activeFruit.is_premium">
+                  <span class="px-2.5 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 text-[10px] font-black tracking-wide rounded-md border border-amber-200/50 shadow-sm flex items-center gap-1"><span>👑</span> TOP</span>
+                </template>
+                <template x-if="activeFruit.is_common">
+                  <span class="px-2.5 py-1 bg-teal-50/80 backdrop-blur-sm text-teal-700 text-[10px] font-black tracking-wide rounded-md border border-teal-100/50">國民水果</span>
+                </template>
+              </div>
+              <div class="flex flex-col mb-1">
+                <h2 class="text-4xl font-black text-slate-900 tracking-tight leading-none drop-shadow-sm" x-text="activeFruit.name"></h2>
+                <span class="text-xs font-bold text-slate-400/80 uppercase tracking-[0.25em] mt-2 ml-0.5" x-text="activeFruit.name_en"></span>
+              </div>
+              <div class="relative w-full mt-1 group">
+                 <div class="relative rounded-2xl border border-white/40 shadow-sm overflow-hidden backdrop-blur-xl transition-all duration-500 hover:shadow-md hover:border-white/60">
+                     <div class="absolute inset-0 bg-gradient-to-br from-white/80 via-white/40 to-white/20"></div>
+                     <div class="relative px-5 py-4 flex items-start gap-3">
+                        <span class="text-lg shrink-0 leading-none pt-0.5 opacity-60 mix-blend-multiply">❝</span>
+                        <p class="text-sm font-bold text-slate-800/90 italic leading-relaxed drop-shadow-sm" x-text="activeFruit.tagline || '暫無描述'"></p>
+                     </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-6 space-y-8 relative z-10 -mt-2">
+            <!-- Basic Info & Chart -->
+            <section>
+              <!-- 🔥 [修改] 改為 3 欄佈局 (grid-cols-3)，更緊湊 -->
+              <div class="grid grid-cols-3 gap-2 mb-6">
+                 
+                 <!-- 1. 價位水準 -->
+                 <div class="bg-slate-50 p-2 rounded-2xl border border-slate-100 flex flex-col justify-center min-h-[70px]">
+                   <p class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">價位水準</p>
+                   <div class="flex text-sm font-bold text-slate-700">
+                     <template x-for="i in 5"><span :class="i <= activeFruit.price_level ? 'text-slate-900' : 'text-slate-200'">$</span></template>
+                   </div>
+                 </div>
+
+                 <!-- 2. 常見別名 -->
+                 <div class="bg-slate-50 p-2 rounded-2xl border border-slate-100 flex flex-col justify-center min-h-[70px]">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">常見別名</p>
+                    <!-- 使用 line-clamp-2 讓太長的別名自動換行，避免被截斷 -->
+                    <p class="text-[11px] text-slate-700 font-bold leading-tight line-clamp-2" x-text="activeFruit.keywords || '-'"></p>
+                 </div>
+
+                 <!-- 3. [合併] 產地資訊 (產地 + 產區) -->
+                 <div class="bg-slate-50 p-2 rounded-2xl border border-slate-100 flex flex-col justify-center min-h-[70px]">
+                   <p class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">指標產區</p>
+                   <div class="flex flex-col gap-1">
+                       <!-- 來源 -->
+                       <div class="flex items-center gap-1">
+                           <span class="text-xs leading-none" x-text="(activeFruit.origin && (activeFruit.origin.includes('國產') || activeFruit.origin.includes('台灣'))) ? '🇹🇼' : '🌏'"></span>
+                           <span class="text-[11px] font-bold text-slate-700 leading-none" x-text="activeFruit.origin || '未標示'"></span>
+                       </div>
+                       <!-- 產區 -->
+                       <div class="flex items-center gap-1 overflow-hidden">
+                           <span class="text-xs leading-none shrink-0 opacity-80">📍</span>
+                           <span class="text-[11px] font-bold text-slate-700 leading-none truncate" x-text="activeFruit.best_origin || '全台'"></span>
+                       </div>
+                   </div>
+                 </div>
+              </div>
+
+              <!-- Seasonality Wave Chart -->
+              <div class="mb-8 select-none" @mouseleave="hoverChartIndex = null">
+                <div class="flex justify-between items-end mb-2">
+                   <p class="text-xs font-bold text-slate-400">產季曲線</p>
+                   <div class="flex items-center gap-2">
+                       <span class="text-xs font-black transition-colors" :style="`color: ${hoverChartIndex !== null ? getChartTheme(activeFruit).text : '#94a3b8'}`" x-text="hoverChartIndex !== null ? (hoverChartIndex + 1) + '月' : '目前'"></span>
+                       <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white transition-all shadow-sm" :style="`background-color: ${hoverChartIndex !== null ? getChartTheme(activeFruit).text : (getCurrentScore(activeFruit) >= 4 ? getChartTheme(activeFruit).text : '#cbd5e1')}`" x-text="hoverChartIndex !== null ? getSeasonLabel(activeFruit.curve[hoverChartIndex]) : getSeasonLabel(getCurrentScore(activeFruit))"></span>
+                   </div>
+                </div>
+                <div class="relative w-full h-32 touch-pan-x select-none group" x-ref="chartBox"
+                     @mousemove="const rect = $refs.chartBox.getBoundingClientRect(); const x = $event.clientX - rect.left; const width = rect.width; hoverChartIndex = Math.min(11, Math.max(0, Math.round((x / width) * 11)));"
+                     @touchmove.prevent="const rect = $refs.chartBox.getBoundingClientRect(); const x = $event.touches[0].clientX - rect.left; const width = rect.width; hoverChartIndex = Math.min(11, Math.max(0, Math.round((x / width) * 11)));">
+                    <svg class="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient :id="'grad-' + activeFruit.id" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" :stop-color="getChartTheme(activeFruit).fill" stop-opacity="0.5" />
+                                <stop offset="100%" :stop-color="getChartTheme(activeFruit).fill" stop-opacity="0.05" />
+                            </linearGradient>
+                        </defs>
+                        <line x1="0" y1="12.5" x2="100" y2="12.5" stroke="#f1f5f9" stroke-width="0.3" />
+                        <line x1="0" y1="25" x2="100" y2="25" stroke="#f1f5f9" stroke-width="0.3" />
+                        <line x1="0" y1="37.5" x2="100" y2="37.5" stroke="#f1f5f9" stroke-width="0.3" />
+                        <path :d="getWavePath(activeFruit.curve, true)" :fill="`url(#grad-${activeFruit.id})`" class="transition-all duration-300 ease-out" />
+                        <path :d="getWavePath(activeFruit.curve, false)" fill="none" :stroke="getChartTheme(activeFruit).stroke" stroke-width="0.8" stroke-linecap="round" vector-effect="non-scaling-stroke" class="transition-all duration-300 ease-out" />
+                    </svg>
+                    <div class="absolute w-3 h-3 bg-white rounded-full border-[1.5px] shadow-sm pointer-events-none transition-all duration-300 animate-pulse z-10" x-show="hoverChartIndex === null" :style="`border-color: ${getChartTheme(activeFruit).stroke}; left: ${((month - 1) * (100/11)) + '%'}; top: ${100 - ((activeFruit.curve[month-1] || 0) / 12) * 100 + '%'}; transform: translate(-50%, -50%);`"></div>
+                    <div x-show="hoverChartIndex !== null" class="pointer-events-none">
+                        <div class="absolute top-0 bottom-0 border-l border-dashed transition-all duration-75 z-0" :style="`border-color: ${getChartTheme(activeFruit).stroke}; opacity: 0.4; left: ${(hoverChartIndex * (100/11)) + '%'};`"></div>
+                        <div class="absolute w-3.5 h-3.5 bg-white rounded-full border-2 shadow-md transition-all duration-75 z-20" :style="`border-color: ${getChartTheme(activeFruit).stroke}; left: ${(hoverChartIndex * (100/11)) + '%'}; top: ${100 - ((activeFruit.curve[hoverChartIndex] || 0) / 12) * 100 + '%'}; transform: translate(-50%, -50%);`"></div>
+                    </div>
+                    <div class="relative w-full h-4 mt-2">
+                        <template x-for="(m, idx) in 12">
+                            <div class="absolute top-0 text-[9px] font-medium transition-all duration-200 pointer-events-none" :style="`left: ${idx * (100/11)}%; transform: translateX(${idx === 0 ? '0%' : (idx === 11 ? '-100%' : '-50%')})`" :class="(hoverChartIndex !== null ? hoverChartIndex === idx : (month - 1) === idx) ? 'text-slate-800 font-bold scale-110 opacity-100' : 'text-slate-300 opacity-80'">
+                                <span x-text="m + '月'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+              </div>
+              <div>
+                 <h3 class="text-base font-bold text-slate-900 mb-3 flex items-center border-l-4 border-amber-500 pl-2">挑選眉角</h3>
+                 <div class="bg-white border border-slate-100 rounded-2xl p-2 shadow-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="bg-slate-50 rounded-xl p-3 text-left flex flex-col justify-center h-full items-start">
+                          <div class="flex items-center gap-1.5 mb-1.5 w-full">
+                              <span class="text-lg leading-none">👀</span>
+                              <span class="text-[10px] font-bold text-slate-400">整體</span>
+                          </div>
+                          <p class="text-xs font-bold text-slate-700 leading-snug" x-text="activeFruit.guide.appearance || '-'"></p>
+                      </div>
+                      <div class="bg-slate-50 rounded-xl p-3 text-left flex flex-col justify-center h-full items-start">
+                          <div class="flex items-center gap-1.5 mb-1.5 w-full">
+                              <span class="text-lg leading-none">🔍</span>
+                              <span class="text-[10px] font-bold text-slate-400">細節</span>
+                          </div>
+                          <p class="text-xs font-bold text-slate-700 leading-snug" x-text="activeFruit.guide.detail || '-'"></p>
+                      </div>
+                      <div class="bg-slate-50 rounded-xl p-3 text-left flex flex-col justify-center h-full items-start">
+                          <div class="flex items-center gap-1.5 mb-1.5 w-full">
+                              <span class="text-lg leading-none">✋</span>
+                              <span class="text-[10px] font-bold text-slate-400">觸覺</span>
+                          </div>
+                          <p class="text-xs font-bold text-slate-700 leading-snug" x-text="activeFruit.guide.tactile || '-'"></p>
+                      </div>
+                      <div class="bg-amber-50 rounded-xl p-3 text-left border border-amber-100/50 flex flex-col justify-center h-full items-start">
+                          <div class="flex items-center gap-1.5 mb-1.5 w-full">
+                              <span class="text-lg leading-none">👃</span>
+                              <span class="text-[10px] font-bold text-amber-600">進階</span>
+                          </div>
+                          <p class="text-xs font-bold text-amber-900 leading-snug" x-text="activeFruit.guide.sense || '無特殊氣味'"></p>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+            </section>
+            
+            <!-- Sensory & Specs -->
+            <section>
+              <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center border-l-4 border-indigo-500 pl-2">口感與風味</h3>
+              <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-5">
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center text-xs h-7">
+                      <span class="w-8 text-slate-400 font-bold shrink-0">糖度</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 relative isolate overflow-visible group/brix">
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 25%"></div>
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 43.75%"></div>
+                        <div class="h-full bg-pink-400 rounded-full relative z-0" :style="`width: ${(activeFruit.brix / 32) * 100}%`"></div>
+                        <div x-show="activeFruit.brix" class="absolute bottom-full mb-1.5 flex flex-col items-center z-20 -translate-x-1/2" :style="`left: ${(activeFruit.brix / 32) * 100}%`">
+                            <div class="px-1.5 py-0.5 rounded shadow-xl bg-slate-900/70 backdrop-blur-sm whitespace-nowrap border border-white/10">
+                                <span class="text-[10px] font-black leading-none tracking-wide drop-shadow-sm block mt-[1px]" :class="getBrixState(activeFruit.brix).color" x-text="getBrixState(activeFruit.brix).text"></span>
+                            </div>
+                            <div class="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[3px] border-t-slate-900/70 -mt-[1px]"></div>
+                        </div>
+                      </div>
+                      <span class="w-6 text-right font-mono font-bold text-slate-700" x-text="activeFruit.brix + '°'"></span>
+                    </div>
+                    <div class="flex items-center text-xs h-7"> 
+                      <span class="w-8 text-slate-400 font-bold shrink-0">GI值</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 relative isolate overflow-visible group/gi">
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 55%"></div>
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 70%"></div>
+                        <div class="h-full bg-orange-400 rounded-full relative z-0" :style="`width: ${(activeFruit.gi_value / 100) * 100}%`"></div>
+                        <div x-show="activeFruit.gi_value" class="absolute bottom-full mb-1.5 flex flex-col items-center z-20 -translate-x-1/2" :style="`left: ${(activeFruit.gi_value / 100) * 100}%`">
+                            <div class="px-1.5 py-0.5 rounded shadow-xl bg-slate-900/70 backdrop-blur-sm whitespace-nowrap border border-white/10">
+                                <span class="text-[10px] font-black leading-none tracking-wide drop-shadow-sm block mt-[1px]" :class="getGIState(activeFruit.gi_value).color" x-text="getGIState(activeFruit.gi_value).text"></span>
+                            </div>
+                            <div class="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[3px] border-t-slate-900/70 -mt-[1px]"></div>
+                        </div>
+                      </div>
+                      <span class="w-6 text-right font-mono font-bold text-slate-700" x-text="activeFruit.gi_value || '-'"></span>
+                    </div>
+                    <div class="flex items-center text-xs h-7"> 
+                      <span class="w-8 text-slate-400 font-bold shrink-0">熱量</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 relative isolate overflow-visible group/cal">
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 40%"></div>
+                        <div class="absolute top-0 bottom-0 w-[1px] bg-white/80 z-10 shadow-[1px_0_2px_rgba(0,0,0,0.1)]" style="left: 60%"></div>
+                        <div class="h-full bg-rose-400 rounded-full relative z-0 transition-all duration-500" :style="`width: ${Math.min(100, (activeFruit.calories / 100) * 100)}%`"></div>
+                        <div x-show="activeFruit.calories" class="absolute bottom-full mb-1.5 flex flex-col items-center z-20 -translate-x-1/2" :style="`left: ${Math.min(100, (activeFruit.calories / 100) * 100)}%`">
+                            <div class="px-1.5 py-0.5 rounded shadow-xl bg-slate-900/70 backdrop-blur-sm whitespace-nowrap border border-white/10">
+                                <span class="text-[10px] font-black leading-none tracking-wide drop-shadow-sm block mt-[1px]" :class="getCaloriesState(activeFruit.calories).color" x-text="getCaloriesState(activeFruit.calories).text"></span>
+                            </div>
+                            <div class="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[3px] border-t-slate-900/70 -mt-[1px]"></div>
+                        </div>
+                      </div>
+                      <div class="w-6 text-right font-mono font-bold text-slate-700 flex justify-end items-center"><span x-text="activeFruit.calories || '-'"></span></div>
+                    </div>
+                    <div class="flex items-center text-xs">
+                      <span class="w-8 text-slate-400 font-bold">酸度</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 overflow-hidden">
+                        <div class="h-full bg-yellow-400 rounded-full" :style="`width: ${(activeFruit.acidity / 10) * 100}%`"></div>
+                      </div>
+                      <span class="w-6 text-right font-mono font-bold text-slate-700" x-text="activeFruit.acidity"></span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                      <span class="w-8 text-slate-400 font-bold">水分</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 overflow-hidden">
+                        <div class="h-full bg-blue-400 rounded-full" :style="`width: ${(activeFruit.moisture / 10) * 100}%`"></div>
+                      </div>
+                      <span class="w-6 text-right font-mono font-bold text-slate-700" x-text="activeFruit.moisture"></span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                      <span class="w-8 text-slate-400 font-bold">香氣</span>
+                      <div class="flex-1 h-2 bg-slate-100 rounded-full mx-3 overflow-hidden">
+                        <div class="h-full bg-purple-400 rounded-full" :style="`width: ${(activeFruit.aroma / 10) * 100}%`"></div>
+                      </div>
+                      <span class="w-6 text-right font-mono font-bold text-slate-700" x-text="activeFruit.aroma"></span>
+                    </div>
+                </div>
+                <div class="h-px bg-slate-100 w-full mb-4"></div>
+                <div class="space-y-3">
+                  <div class="flex gap-3">
+                     <div class="shrink-0 pt-0.5 text-lg">😋</div>
+                     <div>
+                        <span class="text-[10px] font-bold text-slate-400 block mb-0.5">口感特色</span>
+                        <p class="text-sm font-bold text-slate-800 leading-relaxed" x-text="activeFruit.texture_desc"></p>
+                     </div>
+                  </div>
+                  <div class="grid grid-cols-4 gap-2 pt-2">
+                     <div class="col-span-1 bg-slate-50 rounded-xl py-2 px-1 pl-3 flex flex-col items-start justify-center border border-slate-100 min-h-[70px]">
+                        <span class="text-[10px] text-slate-400 mb-1">外皮</span>
+                        <span class="text-xs font-bold text-slate-700 text-left leading-tight" x-text="getSkinLabel(activeFruit.skin_edible)"></span>
+                     </div>
+                     <div class="col-span-1 bg-slate-50 rounded-xl py-2 px-1 pl-3 flex flex-col items-start justify-center border border-slate-100 min-h-[70px]">
+                        <span class="text-[10px] text-slate-400 mb-1">種籽</span>
+                        <span class="text-xs font-bold text-slate-700 text-left leading-tight" x-text="getSeedLabel(activeFruit.seed_edible)"></span>
+                     </div>
+                     <div class="col-span-2 bg-sky-50 rounded-xl py-3 px-2 pl-4 flex flex-col items-start justify-center border border-sky-100 min-h-[70px]">
+                        <div class="flex items-center gap-1 mb-1">
+                            <span class="text-[10px]">💡</span>
+                            <span class="text-[10px] text-sky-500 font-bold">保存方式</span>
+                        </div>
+                        <span class="text-xs font-bold text-sky-800 text-left leading-tight line-clamp-2" x-text="activeFruit.storage"></span>
+                     </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Health & Constitution -->
+            <section>
+              <h3 class="text-base font-bold text-slate-900 mb-3 flex items-center border-l-4 border-teal-500 pl-2">體質屬性</h3>
+              <div class="bg-slate-800 text-white rounded-2xl p-5 mb-4 relative overflow-hidden shadow-lg shadow-slate-200">
+                <div class="relative z-10">
+                  <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-slate-400">屬性</span>
+                    <span class="text-xs font-bold px-2 py-0.5 bg-slate-700 rounded-full text-slate-300 border border-slate-600" x-text="getEnergyLabel(activeFruit.energy_index)"></span>
+                  </div>
+                  <div class="relative h-1 bg-slate-600 rounded-full mb-6 mt-2 mx-1">
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+                    <div class="absolute left-1/4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+                    <div class="absolute left-1/2 top-1/2 -translate-y-1/2 w-1 h-2 bg-slate-400"></div> 
+                    <div class="absolute left-3/4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+                    
+                    <!-- 🔥 修改後的程式碼 (雷達波紋 + 強烈光暈 + 精準定位) -->
+                    <div class="absolute top-1/2 -translate-y-1/2 z-20 w-4 h-4 -ml-2 flex items-center justify-center transition-all duration-500 ease-out will-change-left"
+                        :style="`left: ${((activeFruit.energy_index + 2) / 4) * 100}%`">
+                        
+                        <!-- 🌊 Layer 1: 雷達波紋 (Ping Animation) - 吸引眼球 -->
+                        <span class="absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-75 animate-ping"></span>
+                        
+                        <!-- ✨ Layer 2: 擴散光暈 (Glow) - 增加氛圍感 -->
+                        <div class="absolute -inset-1.5 bg-indigo-400/30 rounded-full blur-sm"></div>
+
+                        <!-- ⚪ Layer 3: 實體核心 - 確保清晰度 -->
+                        <div class="relative w-4 h-4 bg-white border-2 border-slate-800 rounded-full shadow-[0_0_12px_rgba(255,255,255,1)]"></div>
+                    </div>
+                    
+                    <!-- 🔥 修改後的程式碼 (絕對定位釘選，怎麼拉都不會歪) -->
+                    <div class="absolute top-4 w-full left-0 h-4 select-none pointer-events-none">
+                        <span class="absolute left-0 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">偏寒</span>
+                        <span class="absolute left-1/4 -translate-x-1/2 text-[10px] font-bold text-slate-500 whitespace-nowrap">涼</span>
+                        <span class="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-300 whitespace-nowrap">平性</span>
+                        <span class="absolute left-3/4 -translate-x-1/2 text-[10px] font-bold text-slate-500 whitespace-nowrap">溫</span>
+                        <span class="absolute left-full -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">燥熱</span>
+                    </div>
+                  </div>
+                  <div class="mt-8 flex flex-col items-center text-center">
+                      <div class="w-12 h-px bg-slate-600/50 mb-3"></div>
+                      <span class="text-[10px] text-white/40 mb-1 font-bold tracking-widest uppercase">營養價值</span>
+                      <p class="text-xs text-slate-200 leading-relaxed font-medium px-4 text-balance" x-text="activeFruit.nutritional_value"></p>
+                  </div>
+                </div>
+              </div>
+
+            <div class="space-y-3 mt-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl flex flex-col items-start h-full">
+                     <div class="flex items-center gap-1.5 mb-2">
+                        <span class="text-sm">🙆🏻‍♂️</span><span class="text-[10px] font-black text-emerald-600 uppercase tracking-wider">適宜</span>
+                     </div>
+                     <p class="text-xs font-bold text-slate-700 leading-relaxed text-left" x-text="activeFruit.good_for || '一般體質皆可'"></p>
+                  </div>
+                  <div class="bg-rose-50/50 border border-rose-100 p-4 rounded-2xl flex flex-col items-start h-full">
+                     <div class="flex items-center gap-1.5 mb-2">
+                        <span class="text-sm">🙅🏻‍♀️</span><span class="text-[10px] font-black text-rose-600 uppercase tracking-wider">禁忌</span>
+                     </div>
+                     <p class="text-xs font-bold text-slate-700 leading-relaxed text-left" x-text="activeFruit.bad_for || '無特殊禁忌'"></p>
+                  </div>
+                </div>
+                <div x-show="activeFruit.safety_warning" class="bg-orange-50/50 border border-orange-100 p-4 rounded-2xl flex items-start gap-3 text-left">
+                    <span class="text-lg shrink-0 mt-0.5">⚠️</span>
+                    <div>
+                        <span class="block text-[10px] font-black text-orange-400 uppercase tracking-wider mb-1">安全警示</span>
+                        <p class="text-xs font-bold text-orange-800 leading-relaxed" x-text="activeFruit.safety_warning"></p>
+                    </div>
+                </div>
+                <div x-show="activeFruit.relief_symptoms" 
+                     class="bg-indigo-50 border border-indigo-100/50 p-4 rounded-2xl flex flex-col items-start relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-8 text-indigo-200/30 text-[8rem] leading-none font-black select-none pointer-events-none rotate-12 transition-transform duration-700 group-hover:rotate-45">+</div>
+                    <div class="flex items-center gap-2 mb-3 relative z-10">
+                        <div class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-sm">🩺</div>
+                        <span class="text-[10px] font-black text-indigo-600 uppercase tracking-wider">緩解症狀</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-3 relative z-10">
+                        <template x-for="symptom in (activeFruit.relief_symptoms || '').split(/[,，、]/)">
+                            <span x-show="symptom.trim()" class="pl-2 pr-3 py-1.5 bg-indigo-600 text-white text-[11px] font-bold rounded-lg shadow-md shadow-indigo-200 flex items-center gap-1.5 transform transition hover:scale-105" x-text="'✓ ' + symptom.trim()"></span>
+                        </template>
+                    </div>
+                    <div class="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-indigo-100/50 relative z-10">
+                        <p class="text-[10px] font-bold text-indigo-400 mb-1">🔬 作用機制</p>
+                        <p class="text-xs font-bold text-slate-700 leading-relaxed" x-text="activeFruit.relief_mechanism || '暫無詳細機制說明'"></p>
+                    </div>
+                </div>
+                <div class="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl flex items-start gap-3 text-left">
+                    <span class="text-lg shrink-0 mt-0.5">💡</span>
+                    <div>
+                       <span class="block text-[10px] font-black text-purple-400 uppercase tracking-wider mb-1">冷知識</span>
+                       <p class="text-xs font-bold text-purple-800 leading-relaxed opacity-90" x-text="activeFruit.trivia || '暫無冷知識'"></p>
+                    </div>
+                </div>
+                
+                <div x-show="getRelatedFruits(activeFruit).length > 0" class="mt-8 mb-4">
+                    <div class="flex items-center gap-2 mb-4 px-1">
+                        <span class="text-lg animate-bounce">✨</span>
+                        <h3 class="text-sm font-black text-slate-800">猜你喜歡</h3>
+                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">當季精選</span>
+                    </div>
+                    <div class="flex gap-3 overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
+                        <template x-for="rec in getRelatedFruits(activeFruit)" :key="rec.id">
+                            <button @click="goToDetail(rec.id)" 
+                                    class="snap-center shrink-0 w-36 bg-white border border-slate-100 rounded-2xl p-3 shadow-sm flex flex-col items-center text-center transition-transform active:scale-95 group relative overflow-hidden">
+                                <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50"></div>
+                                <div class="w-12 h-12 rounded-full shadow-inner border border-black/5 mb-2 mt-1 transition-transform group-hover:scale-110" :style="`background-color: ${rec.color}`"></div>
+                                <div class="w-full">
+                                    <p class="text-sm font-black text-slate-800 truncate" x-text="rec.name"></p>
+                                    <p class="text-[9px] font-bold text-indigo-500 bg-indigo-50 rounded-md py-0.5 mt-1 truncate px-1" x-text="rec.recommendReason"></p>
+                                </div>
+                                <div class="mt-2 flex items-center gap-1 justify-center opacity-60">
+                                    <div class="w-1.5 h-1.5 rounded-full" :class="getCurrentScore(rec) >= 10 ? 'bg-rose-500' : 'bg-emerald-500'"></div>
+                                    <span class="text-[9px] text-slate-400" x-text="getCurrentScore(rec) >= 10 ? '大盛產' : '產季中'"></span>
+                                </div>
+                            </button>
+                        </template>
+                        <div class="w-2 shrink-0"></div>
+                    </div>
+                </div>
+                <div class="h-12"></div>
+            </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- 🔍 Spotlight Search Modal (加入 x-cloak) -->
+  <div x-show="searchOpen" x-cloak
+       @keydown.escape.window="closeSearch()"
+       class="fixed inset-0 z-[80] flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" x-transition.opacity @click="closeSearch()"></div>
+    <div class="relative w-full max-w-2xl bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[70vh]"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+        <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center gap-3 sm:gap-4 shrink-0">
+            <span class="text-xl sm:text-3xl animate-bounce">🔍</span>
+            <input x-ref="searchInput" x-model="searchQuery" type="text" placeholder="搜尋水果、症狀或營養 (如：維他命C)..." class="w-full text-base sm:text-xl font-bold text-slate-800 placeholder:text-slate-300 outline-none bg-transparent h-10 sm:h-12" autocomplete="off">
+            <button @click="closeSearch()" class="p-2 text-slate-300 hover:text-slate-500 bg-slate-100 rounded-full shrink-0">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="overflow-y-auto p-4 min-h-[300px] bg-slate-50/50">
+            <div x-show="!searchQuery" class="h-full flex flex-col items-center justify-center text-center py-10 opacity-60">
+                <template x-if="triviaFruit">
+                    <div class="max-w-md">
+                        <div class="text-4xl mb-4 grayscale" x-text="triviaFruit.emoji || '💡'"></div>
+                        <p class="text-[10px] font-black tracking-[0.2em] text-indigo-400 uppercase mb-2">Did You Know?</p>
+                        <h3 class="text-lg font-bold text-slate-700 leading-relaxed">
+                            <span class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg mr-1" x-text="triviaFruit.name"></span>
+                            <span x-text="triviaFruit.trivia"></span>
+                        </h3>
+                        <button @click="refreshTrivia()" class="mt-6 text-xs font-bold text-slate-400 hover:text-indigo-500 flex items-center gap-1 mx-auto transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            換一個冷知識
+                        </button>
+                    </div>
+                </template>
+                <template x-if="!triviaFruit"><p class="text-sm text-slate-400">輸入關鍵字開始搜尋...</p></template>
+            </div>
+            <div x-show="searchQuery" class="space-y-2">
+                <template x-for="fruit in getSearchResults()" :key="fruit.id">
+                    <button @click="goToDetail(fruit.id)" class="w-full text-left bg-white p-3 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-4 group">
+                        <div class="w-12 h-12 rounded-full shadow-inner border border-black/5 shrink-0" :style="`background-color: ${fruit.color}`"></div>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base font-black text-slate-800 shrink-0" x-html="highlightMatch(fruit.name, searchQuery)"></span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0" :class="getCurrentScore(fruit) >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'" x-text="getCurrentScore(fruit) >= 4 ? '產季中' : '非產季'"></span>
+                            </div>
+                            <div class="text-xs text-slate-400 font-medium truncate mt-0.5" x-html="highlightMatch(fruit.keywords, searchQuery)"></div>
+                            <div class="text-xs text-slate-500 line-clamp-1 mt-1 group-hover:text-indigo-600 transition-colors"
+                                x-data="{ match: getMatchResult(fruit) }">
+                                <template x-if="match.type !== 'none'">
+                                    <span class="flex items-baseline gap-1">
+                                        <span class="font-bold shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-slate-100" 
+                                              :class="match.colorClass" 
+                                              x-text="match.label"></span>
+                                        <span class="truncate" x-html="highlightMatch(match.text, searchQuery)"></span>
+                                    </span>
+                                </template>
+                                <template x-if="match.type === 'none'">
+                                    <span x-html="highlightMatch(fruit.tagline || '點擊查看詳情', searchQuery)"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                    </button>
+                </template>
+                <div x-show="getSearchResults().length === 0" class="text-center py-8 text-slate-400">
+                    <p class="text-2xl mb-2">🤔</p>
+                    <p class="text-sm font-bold">找不到相關的水果</p>
+                    <p class="text-xs mt-1">試試看「便秘」、「維他命」或「紅色」？</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 text-[10px] text-slate-400 flex justify-between items-center">
+            <span>💡 支援搜尋名稱、功效、情境與營養成分</span>
+            <span class="hidden sm:inline-block font-mono bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-500">ESC to close</span>
+        </div>
+    </div>
+  </div>
+
+  <!-- 🎮 Floating Action Buttons (加入 x-cloak) -->
+  <div class="fixed bottom-5 left-0 right-0 z-[70] w-full flex justify-end px-5 lg:px-4 lg:max-w-6xl lg:mx-auto pointer-events-none">
+    <div class="pointer-events-auto flex flex-col items-center gap-3">
+        <button @click="toggleLargeMode()" 
+                x-show="!loading" x-cloak
+                x-transition:enter="transition ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 delay-200"
+                x-transition:enter-start="opacity-0 translate-y-8 scale-50"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                class="group relative w-10 h-10 rounded-full shadow-lg shadow-slate-300/50 border flex items-center justify-center transition-all duration-300 active:scale-90 hover:-translate-y-1"
+                :class="largeMode ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/90 backdrop-blur-md border-white/50 text-slate-600 hover:shadow-indigo-200'">
+            <div class="flex items-end gap-[1px] relative select-none">
+                <span class="font-bold leading-none mb-[3px] transition-all" :class="largeMode ? 'text-[9px] opacity-80' : 'text-[10px]'">A</span>
+                <span class="font-black leading-none transition-all" :class="largeMode ? 'text-lg' : 'text-base'">A</span>
+                <div class="absolute -top-1.5 -right-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 border border-white shadow-sm" x-show="largeMode" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="scale-0" x-transition:enter-end="scale-100"></div>
+            </div>
+        </button>
+
+        <div x-data="{
+             show: false, submitting: false, sent: false, form: { sentiment: '', tags: [], comment: '' },
+             options: [ { val: 'negative', emoji: '😫', label: '不好用' }, { val: 'neutral', emoji: '🤔', label: '怪怪的' }, { val: 'positive', emoji: '😍', label: '好棒' } ],
+             tagsMap: { negative: ['有 Bug', '卡頓', '介面混亂', '資料錯誤', '無法操作'], neutral: ['建議改善', '看不懂', '操作困難', '找不到功能'], positive: ['許願新功能', '介面好看', '非常實用', '內容很棒'] },
+             get currentTags() { return this.tagsMap[this.form.sentiment] || []; },
+             toggleTag(tag) { if (this.form.tags.includes(tag)) this.form.tags = this.form.tags.filter(t => t !== tag); else this.form.tags.push(tag); },
+             submit() {
+                if (!this.form.sentiment) return;
+                this.submitting = true;
+                let publicUrl = window.__SERVER_DATA__?.deployUrl || window.location.href;
+                if (publicUrl.endsWith('/')) publicUrl = publicUrl.slice(0, -1);
+                const cleanUrl = publicUrl + window.location.hash;
+                const payload = { sentiment: this.form.sentiment, tags: this.form.tags.join(', '), comment: this.form.comment, url: cleanUrl, device: navigator.userAgent.match(/Mobile/i) ? 'Mobile' : 'Desktop' };
+                google.script.run.withSuccessHandler(() => { 
+                    this.submitting = false; 
+                    this.sent = true; 
+                    
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'custom_interaction',
+                        'category': 'UserAction',
+                        'action': 'feedback_submit',
+                        'label': this.form.sentiment
+                    });
+                    console.log('📡 [GTM] Feedback Sent');
+
+                    setTimeout(() => { 
+                        this.show = false; 
+                        this.sent = false; 
+                        this.form = { sentiment: '', tags: [], comment: '' }; 
+                    }, 2000); 
+                }).withFailureHandler((err) => { 
+                    this.submitting = false; 
+                    alert('傳送失敗: ' + err); 
+                }).submitUserFeedback(payload);
+             }
+           }">
+            <button @click="show = true" x-show="!show" x-transition:enter="transition ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 delay-100" x-transition:enter-start="opacity-0 translate-y-8 scale-50" x-transition:enter-end="opacity-100 translate-y-0 scale-100" class="w-10 h-10 rounded-full bg-slate-800 text-white shadow-lg shadow-slate-400/40 flex items-center justify-center hover:bg-slate-700 active:scale-90 hover:-translate-y-1 transition-all duration-300 group">
+              <svg class="w-5 h-5 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </button>
+            <div x-show="show" x-cloak class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 cursor-default">
+               <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity pointer-events-auto" x-transition.opacity @click="show = false"></div>
+               <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 relative flex flex-col gap-4 pointer-events-auto"
+                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-10 scale-95">
+                  <button @click="show = false" class="absolute top-4 right-4 text-slate-300 hover:text-slate-500 p-1 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                  <div x-show="sent" class="py-8 text-center flex flex-col items-center justify-center">
+                      <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4 text-3xl animate-bounce">✨</div>
+                      <h3 class="text-xl font-black text-slate-800">收到囉！</h3>
+                      <p class="text-sm text-slate-500 mt-1">感謝你的建議， Mike 會繼續努力！</p>
+                  </div>
+                  <div x-show="!sent">
+                      <div class="mb-4"><h3 class="text-lg font-black text-slate-800">使用體驗如何？</h3><p class="text-xs text-slate-400 font-medium mt-0.5">很開心你願意和 Mike 分享你的想法，謝謝你 ♥️</p></div>
+                      <div class="flex justify-center gap-6 py-2">
+                         <template x-for="opt in options" :key="opt.val"><button @click="form.sentiment = opt.val; form.tags = []" class="flex flex-col items-center gap-1 group transition-all duration-300" :class="form.sentiment === opt.val ? 'scale-110 grayscale-0' : 'grayscale opacity-60 hover:opacity-100 hover:scale-105'"><span class="text-4xl filter drop-shadow-sm transition-transform group-active:scale-75" x-text="opt.emoji"></span><span class="text-[10px] font-bold uppercase tracking-wider text-slate-500" x-text="opt.label"></span></button></template>
+                      </div>
+                      <div x-show="form.sentiment" x-transition class="mt-4"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">具體來說...</p><div class="flex flex-wrap gap-2"><template x-for="tag in currentTags" :key="tag"><button @click="toggleTag(tag)" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95" :class="form.tags.includes(tag) ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-slate-300'" x-text="tag"></button></template></div></div>
+                      <div x-show="form.sentiment" x-transition class="mt-4 space-y-4">
+                         <textarea x-model="form.comment" rows="2" placeholder="還有什麼要補充的嗎？(選填)" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 resize-none transition-all"></textarea>
+                         <button @click="submit()" :disabled="submitting" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-300 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                            <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span x-text="submitting ? '傳送中...' : '發送回饋'"></span>
+                         </button>
+                      </div>
+                  </div>
+               </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    function app() {
+      // 🔥 [MVP 修改] 裝置判斷邏輯
+      const isMobile = window.innerWidth < 1024; // 對應 CSS 的 lg 斷點
+      
+      // 讀取歷史設定 (若有)
+      const savedLarge = localStorage.getItem('fruit_app_large_mode');
+
+      return {
+        chartMode: 'gift',
+        loading: true,
+        deployUrl: '',
+        searchOpen: false,
+        searchQuery: '',
+        triviaFruit: null,
+        view: 'home',
+        month: new Date().getMonth() + 1,
+        hoverChartIndex: null,
+
+        // 🔥 [MVP 修改] 1. 長輩模式 (Senior Mode)
+        // 手機預設 ON，桌機預設 OFF (除非用戶之前手動改過)
+        largeMode: savedLarge !== null ? (savedLarge === 'true') : isMobile,
+
+        // 🔥 [MVP 修改] 2. 篩選設定
+        // 老饕必吃：全部預設 OFF
+        onlyPremium: false,
+        // 4. 修改：大眾水果：全平台預設 OFF (原為 isMobile)
+        onlyCommon: false,
+        
+        showOffSeason: false, 
+        fruits: [],
+        activeFruit: null,
+        lockedFruit: null, 
+        hoveredFruit: null,
+        guideMode: 'scenario',
+        activeFilter: null,
+        guideData: { scenarios: [], symptoms: [] },
+        expandedItem: null,
+
+        trackPage(path, title) {
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'virtual_page_view',
+                'page_path': path,
+                'page_title': title
+            });
+            console.log('📡 [GTM] Pageview:', path);
+        },
+        trackEvent(action, label = '') {
+            if (!window.dataLayer) return;
+            window.dataLayer.push({
+                'event': 'custom_interaction',
+                'category': 'UserAction',
+                'action': action,
+                'label': label
+            });
+            console.log('📡 [GTM] Event:', action, label);
+        },
+        trackSearch(term) {
+            if(!term || term.trim() === '') return;
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'view_search_results',
+                'search_term': term
+            });
+            console.log('📡 [GTM] Search:', term);
+        },
+
+        toggleLargeMode() {
+            this.largeMode = !this.largeMode;
+            localStorage.setItem('fruit_app_large_mode', this.largeMode);
+            this.$nextTick(() => {});
+        },
+        removeCurtain() {
+            this.loading = false; 
+            const curtain = document.getElementById('app-loading-curtain');
+            if (curtain) {
+                curtain.classList.add('fade-out');
+                setTimeout(() => { curtain.remove(); }, 600);
+            }
+        },
+        initApp() {
+          if (window.__SERVER_DATA__) {
+            const data = window.__SERVER_DATA__;
+            this.fruits = data.fruits || [];
+            this.guideData.scenarios = data.scenarios || [];
+            this.guideData.symptoms = data.symptoms || [];
+            this.deployUrl = data.deployUrl || window.location.href.split('#')[0].split('?')[0];
+            const queryId = data.params && data.params.id;
+
+            this.removeCurtain(); 
+            this.$nextTick(() => {
+                if (queryId) {
+                    this.goToDetail(queryId);
+                    if (this.activeFruit) history.replaceState(null, null, '#' + queryId);
+                } else {
+                    this.handleHash();
+                    if (!this.activeFruit) {
+                        this.trackPage('/home', '首頁-水果呷對時');
+                    }
+                }
+            });
+          } else {
+            this.fetchData();
+          }
+          window.addEventListener('keydown', (e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); this.openSearch(); }
+          });
+        },
+        getMatchedFruits(keyword) {
+            if (!keyword) return [];
+            const matches = this.fruits.filter(f => {
+                const source = this.guideMode === 'scenario' ? f.scenario : f.relief_symptoms;
+                if (!source) return false;
+                return source.toString().includes(keyword);
+            });
+            return matches.sort((a, b) => {
+                const scoreA = this.getCurrentScore(a);
+                const scoreB = this.getCurrentScore(b);
+                const diffScore = scoreB - scoreA;
+                if (diffScore !== 0) return diffScore;
+                return (Number(b.brix)||0) - (Number(a.brix)||0);
+            });
+        },
+        getGuideList() {
+            const source = this.guideMode === 'scenario' ? this.guideData.scenarios : this.guideData.symptoms;
+            const groups = {};
+            source.forEach(item => { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+            const groupArray = Object.keys(groups).map(name => ({ name: name, items: groups[name] }));
+            if (this.guideMode === 'scenario') {
+                const priority = '場合與時機'; 
+                groupArray.sort((a, b) => { if (a.name === priority) return -1; if (b.name === priority) return 1; return 0; });
+            } 
+            return groupArray;
+        },
+        toggleFilter(name) {
+            if (this.activeFilter === name) {
+                this.activeFilter = null;
+            } else {
+                this.activeFilter = name;
+                this.$nextTick(() => {
+                    const resultSection = document.getElementById('guide-results-container');
+                    if(resultSection) resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
+        },
+        getActiveFilterResults() {
+            if (!this.activeFilter) return [];
+            return this.getMatchedFruits(this.activeFilter);
+        },
+        getSymptomGroups() {
+            if (!this.guideData || !this.guideData.symptoms) return []; 
+            const groups = {};
+            this.guideData.symptoms.forEach(item => { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+            return Object.keys(groups).map(name => ({ name, items: groups[name] }));
+        },
+        getScenarioGroups() {
+            if (!this.guideData || !this.guideData.scenarios) return [];
+            const groups = {};
+            this.guideData.scenarios.forEach(item => { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+            return Object.keys(groups).sort((a,b) => a === '場合與時機' ? -1 : 1).map(name => ({ name, items: groups[name] }));
+        }, 
+        getGroupTotal(items) { return items.reduce((acc, item) => acc + this.getMatchedFruits(item.name).length, 0); },
+        toggleItem(name) { this.expandedItem = (this.expandedItem === name) ? null : name; },
+        fetchData() { google.script.run.withSuccessHandler((res) => { if(res.data) this.fruits = res.data; this.removeCurtain(); }).getFruitData(); },
+        clearLock() { this.lockedFruit = null; },
+        handleBubbleClick(fruit) {
+           if (this.lockedFruit && this.lockedFruit.id === fruit.id) { this.goToDetail(fruit.id); } else { this.lockedFruit = fruit; }
+        },
+        getRenderData() {
+          if (!this.fruits.length) return [];
+          
+          const isMobile = window.innerWidth < 768;
+          const baseSize = isMobile ? 12 : 20; 
+          const PADDING = 5; const SAFE_ZONE = 100 - (PADDING * 2);
+          const getJitter = (str) => { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return (hash % 30) / 10; };
+          
+          return this.fruits
+            .filter(f => f.name && f.name.toString().trim() !== '')
+            .map(f => {
+                let curve = f.curve || []; if (!Array.isArray(curve)) curve = Array(12).fill(0);
+                const mIndex = parseInt(this.month) - 1;
+                const seasonScore = Number(curve[mIndex]) || 0;
+                
+                // 1. 基礎篩選
+                let isVisible = true;
+                if (this.onlyPremium && !f.is_premium) isVisible = false;
+                if (this.onlyCommon && !f.is_common) isVisible = false;
+                
+                // 2. 模式專屬數據檢查 (防止資料缺失)
+                if (this.chartMode === 'sugar' && !f.gi_value) isVisible = false;
+                if (this.chartMode === 'burden' && (!f.calories || !f.gi_value)) isVisible = false;
+                if (this.chartMode === 'tcm' && (f.moisture === undefined || f.energy_index === undefined)) isVisible = false;
+                if (this.chartMode === 'gift' && (f.price_level === undefined || f.aroma === undefined)) isVisible = false;
+                // 🔥 [NEW] 風味模式檢查：必須有酸度資料
+                if (this.chartMode === 'flavor' && (f.acidity === undefined || f.acidity === null)) isVisible = false;
+
+                let size = baseSize;
+                if (isVisible) {
+                    const diff = Math.max(0, seasonScore - 4);
+                    const multiplier = isMobile ? 10 : 16; 
+                    size = baseSize + (Math.pow(diff, 1.25) * multiplier);
+                } else { size = 0; }
+
+                // 3. 座標運算核心 (六種模式)
+                let rawPercentX = 50;
+                let rawPercentY = 50;
+
+                if (this.chartMode === 'tcm') {
+                    const energy = Number(f.energy_index) || 0;
+                    rawPercentX = Math.min(100, Math.max(0, ((energy + 2) / 4) * 100));
+                    const moisture = Number(f.moisture) || 0;
+                    rawPercentY = Math.min(100, Math.max(0, ((moisture - 2) / 8) * 100)); // 水分 2-10
+
+                } else if (this.chartMode === 'burden') {
+                    const cal = Number(f.calories) || 0;
+                    const MIN_CAL = 10; const MID_CAL = 50; const MAX_CAL = 180;
+                    if (cal <= MID_CAL) rawPercentX = ((cal - MIN_CAL) / (MID_CAL - MIN_CAL)) * 50;
+                    else rawPercentX = 50 + ((cal - MID_CAL) / (MAX_CAL - MID_CAL)) * 50;
+                    rawPercentX = Math.min(100, Math.max(0, rawPercentX));
+                    const gi = Number(f.gi_value) || 0;
+                    rawPercentY = Math.min(100, Math.max(0, (gi / 75) * 100));
+
+                } else if (this.chartMode === 'sugar') {
+                    const brix = Number(f.brix) || 0; 
+                    rawPercentX = Math.min(100, Math.max(0, (brix / 32) * 100));
+                    const gi = Number(f.gi_value) || 0;
+                    rawPercentY = Math.min(100, Math.max(0, (gi / 75) * 100));
+
+                } else if (this.chartMode === 'gift') {
+                    const price = Number(f.price_level) || 1;
+                    rawPercentX = Math.min(100, Math.max(0, ((price - 1) / 4) * 100));
+                    const aroma = Number(f.aroma) || 0;
+                    rawPercentY = Math.min(100, Math.max(0, (aroma / 10) * 100));
+
+                } else if (this.chartMode === 'flavor') {
+                    // 🔥 [NEW] 模式 F: 風味光譜
+                    // X軸: 甜度 (比照日常/糖度模式)
+                    const brix = Number(f.brix) || 0;
+                    rawPercentX = Math.min(100, Math.max(0, (brix / 32) * 100));
+
+                    // Y軸: 酸度 (0-10) -> 向上越酸
+                    const acidity = Number(f.acidity) || 0;
+                    rawPercentY = Math.min(100, Math.max(0, (acidity / 10) * 100));
+
+                } else {
+                    // 模式 A: 日常選購
+                    const brix = Number(f.brix) || 0; 
+                    rawPercentX = Math.min(100, Math.max(0, (brix / 32) * 100));
+                    const energy = Number(f.energy_index) || 0; 
+                    rawPercentY = Math.min(100, Math.max(0, ((energy + 2) / 4) * 100));
+                }
+
+                const jitterX = isVisible ? getJitter(f.id + 'x') : 0; 
+                const jitterY = isVisible ? getJitter(f.id + 'y') : 0;
+                
+                return {
+                  id: f.id, name: f.name || '', category: f.category || '未分類', color: f.color || '#ccc', 
+                  brix: f.brix, is_premium: f.is_premium, score: seasonScore, energy_index: f.energy_index, 
+                  gi_value: f.gi_value, calories: f.calories, moisture: f.moisture, 
+                  price_level: f.price_level, aroma: f.aroma, acidity: f.acidity,
+                  domX: PADDING + (rawPercentX * SAFE_ZONE / 100) + jitterX, 
+                  domY: PADDING + (rawPercentY * SAFE_ZONE / 100) + jitterY, 
+                  r: size
+                };
+            })
+            .filter(item => item.r > 0).sort((a, b) => b.r - a.r); 
+        },
+        getChartItems() { return this.getRenderData().filter(f => f.score >= 4); },
+
+        goToDetail(id) {
+          const target = this.fruits.find(f => f.id === id);
+          if (target) {
+            if (this.searchOpen && this.searchQuery) {
+                this.trackSearch(this.searchQuery);
+                this.searchOpen = false;
+            }
+
+            this.activeFruit = target;
+            this.view = 'detail';
+            
+            if(location.hash !== '#' + id) history.pushState({id: id}, null, '#' + id);
+            
+            this.trackPage('/fruit/' + target.id, '詳情-' + target.category + '-' + target.name);
+
+            // 🔥 [MVP 還原] 只保留垂直捲動歸零，移除複雜的橫向重置邏輯
+            setTimeout(() => {
+                const el = document.getElementById('detail-scroll-view');
+                if (el) { el.scrollTop = 0; }
+                window.scrollTo(0, 0);
+            }, 10);
+          }
+        },
+        goHome() {
+          history.pushState(null, null, ' ');
+          this.view = 'home';
+          this.activeFruit = null;
+          this.trackPage('/home', '首頁-水果呷對時');
+        },
+        
+        openGuide() {
+            this.view = 'guide';
+            this.trackPage('/guide', '列表-挑選指南');
+        },
+
+        getGroupedFruits() {
+           const list = this.getRenderData();
+           const tiers = { 1: { name: '🔥 大盛產・絕佳賞味', items: [] }, 2: { name: '🌿 產季中・品質優', items: [] }, 3: { name: '🌱 產季初/尾・嘗鮮', items: [] }, 4: { name: '❄️ 非產季・等待中', items: [] } };
+           list.forEach(fruit => {
+             const s = fruit.score;
+             if (s >= 10) tiers[1].items.push(fruit); else if (s >= 7) tiers[2].items.push(fruit); else if (s >= 4) tiers[3].items.push(fruit); else tiers[4].items.push(fruit);
+           });
+           const result = [];
+           [1, 2, 3, 4].forEach(level => {
+             if (level === 4 && !this.showOffSeason) return;
+             const group = tiers[level];
+             if (group.items.length > 0) { group.items.sort((a, b) => (b.brix || 0) - (a.brix || 0)); result.push(group); }
+           });
+           return result;
+        },
+        getVisibleCount() {
+            const list = this.getRenderData();
+            if (this.showOffSeason) return list.length;
+            return list.filter(f => f.score >= 4).length;
+        },
+
+        async shareCurrentFruit() {
+          if (!this.activeFruit) return;
+          const f = this.activeFruit;
+          this.trackEvent('share', `${f.name} (${f.id})`);
+
+          const score = this.getCurrentScore(f);
+          const baseUrl = this.deployUrl.endsWith('/') ? this.deployUrl.slice(0, -1) : this.deployUrl;
+          const shareUrl = `${baseUrl}?id=${f.id}`;
+          
+          let strategy = 'A'; 
+          
+          if (score > 6) {
+             strategy = 'A';
+          } else {
+             strategy = Math.random() > 0.5 ? 'B' : 'C';
+          }
+
+          const symptoms = (f.relief_symptoms || '').split(/[,，、]/).map(s => s.trim()).filter(s => s);
+          const hasSymptoms = symptoms.length > 0;
+          const hasTrivia = f.trivia && f.trivia.length > 5;
+
+          if (strategy === 'B' && !hasSymptoms) strategy = 'A';
+          if (strategy === 'C' && !hasTrivia) strategy = 'A';
+
+          let headline = ''; 
+          let body = '';     
+
+          if (strategy === 'A') {
+              const seasonLabel = this.getSeasonLabel(score);
+              headline = `🔥 救命！現在的【${f.name}】也太好吃了吧！`;
+              body = `😲 錯過等明年！現在 ${seasonLabel} 沒吃到真的會後悔...\n\n👅 口感：${f.tagline || f.texture_desc || '好吃到無法形容'}\n\n👇 不想買到雷？3招挑選撇步這裏看：`;
+          } else if (strategy === 'B') {
+              const mainSym = symptoms[0];
+              headline = `🩺 身體在呼救？最近剛好需要【${mainSym}】嗎？`;
+              const subSym = symptoms.length > 1 ? `幫忙 ${symptoms[1]}` : '是你的神隊友';
+              body = `😮 竟然！原來【${f.name}】不只解饞，還能${subSym}？\n\n💡 適合：${f.good_for || '日常保養'}\n\n👇 教你怎麼挑最有效 + 查最新產季：`;
+          } else {
+              headline = `🤯 什麼？原來【${f.name}】還有這個秘密？`;
+              let safeTrivia = f.trivia;
+              if (f.name && !safeTrivia.startsWith(f.name)) {
+                  safeTrivia = `${f.name}${safeTrivia}`;
+              }
+              body = `🧐 跟大家分享一個冷知識：\n「${safeTrivia}」\n\n👇 點這看「詳細挑選指南」與「完整禁忌」：`;
+          }
+
+          const fullMessage = `${headline}\n\n${body}`;
+
+          const shareData = { 
+              title: headline,    
+              text: fullMessage,  
+              url: shareUrl 
+          };
+
+          if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) { 
+              try { await navigator.share(shareData); } catch (err) { console.log('Share cancelled'); }
+          } else { 
+              try { 
+                  const copyText = `${fullMessage}\n${shareUrl}`; 
+                  await navigator.clipboard.writeText(copyText); 
+                  alert('📋 文案已複製！貼到 LINE 給朋友看看！'); 
+              } catch (err) { 
+                  prompt('請手動複製連結：', shareUrl); 
+              } 
+          }
+        },
+        
+        openSearch() {
+            this.searchOpen = true;
+            this.searchQuery = ''; 
+            this.refreshTrivia(); 
+            this.hoveredFruit = null;
+            this.trackPage('/search', '列表-搜尋模式');
+            this.$nextTick(() => { if(this.$refs.searchInput) this.$refs.searchInput.focus(); });
+        },
+        closeSearch() {
+            if (this.searchOpen && this.searchQuery) {
+                this.trackSearch(this.searchQuery);
+            }
+            this.searchOpen = false;
+            
+            if (this.view === 'home') this.trackPage('/home', '首頁-水果呷對時');
+            else if (this.view === 'detail') this.trackPage('/fruit/' + this.activeFruit.id, '詳情-' + this.activeFruit.category + '-' + this.activeFruit.name);
+        },
+
+        refreshTrivia() {
+            const candidates = this.fruits.filter(f => f.trivia && f.trivia.length > 5);
+            if (candidates.length > 0) {
+                this.triviaFruit = candidates[Math.floor(Math.random() * candidates.length)];
+                this.triviaFruit.emoji = ['🤓', '💡', '🧐', '😎', '🍎'][Math.floor(Math.random() * 5)];
+            }
+        },
+        getSearchResults() {
+            if (!this.searchQuery) return [];
+            const q = this.searchQuery.toLowerCase().trim();
+            return this.fruits.filter(f => {
+                const source = [
+                    f.name, 
+                    f.name_en, 
+                    f.keywords, 
+                    f.relief_symptoms, 
+                    f.scenario, 
+                    f.nutritional_value,
+                    f.good_for, 
+                    f.bad_for
+                ].join(' ').toLowerCase();
+                return source.includes(q);
+            }).slice(0, 10); 
+        },
+        getMatchResult(fruit) {
+            const q = (this.searchQuery || '').toLowerCase();
+            if (fruit.bad_for && fruit.bad_for.toLowerCase().includes(q)) {
+                return { type: 'bad', label: '🙅🏻‍♀️ 禁忌', text: fruit.bad_for, colorClass: 'text-rose-600 bg-rose-50' };
+            }
+            if (fruit.good_for && fruit.good_for.toLowerCase().includes(q)) {
+                return { type: 'good', label: '🙆🏻‍♂️ 適宜', text: fruit.good_for, colorClass: 'text-emerald-600 bg-emerald-50' };
+            }
+            if (fruit.nutritional_value && fruit.nutritional_value.toLowerCase().includes(q)) {
+                return { type: 'nutri', label: '🔥 營養', text: fruit.nutritional_value, colorClass: 'text-orange-500 bg-orange-50' };
+            }
+            if (fruit.relief_symptoms && fruit.relief_symptoms.toLowerCase().includes(q)) {
+                return { type: 'relief', label: '🩺 功效', text: fruit.relief_symptoms, colorClass: 'text-indigo-500 bg-indigo-50' };
+            }
+            if (fruit.scenario && fruit.scenario.toLowerCase().includes(q)) {
+                return { type: 'scenario', label: '🎨 適合', text: fruit.scenario, colorClass: 'text-slate-500 bg-slate-100' };
+            }
+            return { type: 'none', label: '', text: '', colorClass: '' };
+        },
+        highlightMatch(text, query) {
+            if (!text) return '';
+            if (!query || query.trim() === '') return text;
+            const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${safeQuery})`, 'gi');
+            return text.toString().replace(regex, '<span class="text-indigo-600 bg-indigo-50 font-black rounded-[2px] px-0.5">$1</span>');
+        },
+        getRelatedFruits(currentFruit) {
+            if (!currentFruit) return [];
+            const mIndex = parseInt(this.month) - 1;
+            const currentSymptoms = (currentFruit.relief_symptoms || '').split(/[,，、]/).map(s => s.trim()).filter(s => s);
+            const scoredCandidates = this.fruits
+                .filter(f => f.id !== currentFruit.id) 
+                .map(f => {
+                    let points = 0; let reason = '';
+                    const seasonScore = Number((f.curve || [])[mIndex]) || 0;
+                    if (seasonScore < 4) return null; 
+                    const fSymptoms = (f.relief_symptoms || '').split(/[,，、]/).map(s => s.trim());
+                    const sharedSymptoms = currentSymptoms.filter(s => fSymptoms.includes(s));
+                    if (sharedSymptoms.length > 0) { points += 10; reason = `也能改善${sharedSymptoms[0]}`; }
+                    if (f.category === currentFruit.category) { points += 5; if (!reason) reason = `同為${f.category}家族`; }
+                    points += seasonScore; if (!reason) reason = '當季必吃推薦';
+                    return { ...f, matchScore: points, recommendReason: reason };
+                })
+                .filter(f => f !== null).sort((a, b) => b.matchScore - a.matchScore).slice(0, 6); 
+            return scoredCandidates;
+        },
+        isLightColor(hex) {
+            if (!hex) return false;
+            const r = parseInt(hex.substr(1, 2), 16); const g = parseInt(hex.substr(3, 2), 16); const b = parseInt(hex.substr(5, 2), 16);
+            const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
+            return luma > 200; 
+        },
+        adjustBrightness(hex, percent) {
+            if (!hex) return '#000000';
+            hex = hex.replace(/^\s*#|\s*$/g, ''); if (hex.length === 3) hex = hex.replace(/(.)/g, '$1$1');
+            let r = parseInt(hex.substr(0, 2), 16); let g = parseInt(hex.substr(2, 2), 16); let b = parseInt(hex.substr(4, 2), 16);
+            const amount = Math.floor((percent / 100) * 255);
+            r = Math.min(255, Math.max(0, r + amount)); g = Math.min(255, Math.max(0, g + amount)); b = Math.min(255, Math.max(0, b + amount));
+            const toHex = (n) => n.toString(16).padStart(2, '0'); return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        },
+        getChartTheme(fruit) {
+            const baseColor = fruit.color || '#cccccc';
+            const r = parseInt(baseColor.substr(1, 2), 16); const g = parseInt(baseColor.substr(3, 2), 16); const b = parseInt(baseColor.substr(5, 2), 16);
+            const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
+            if (luma > 180) {
+                if (r > 200 && g > 180) return { stroke: '#d97706', fill: baseColor, text: '#d97706' };
+                return { stroke: '#475569', fill: baseColor, text: '#475569' };
+            }
+            return { stroke: baseColor, fill: baseColor, text: baseColor };
+        },
+        getGIState(val) {
+            const v = Number(val) || 0;
+            if (v < 55) return { text: '負擔輕・血糖穩', color: 'text-emerald-300' };
+            if (v < 70)  return { text: '需適量・懂節制', color: 'text-amber-300' };
+            return { text: '易飆升・避空腹', color: 'text-rose-300' };
+        },
+        getBrixState(val) {
+            const v = Number(val) || 0;
+            if (v < 8)  return { text: '微甜・清爽不膩', color: 'text-emerald-300' };
+            if (v < 14)  return { text: '香甜・大眾口味', color: 'text-amber-300' };
+            return { text: '濃甜・甜度像蜜', color: 'text-rose-300' };
+        },
+        getCaloriesState(val) {
+            const v = Number(val) || 0;
+            if (v <= 40) return { text: '低卡・輕盈無負擔', color: 'text-emerald-300' };
+            if (v <= 60) return { text: '中卡・適量攝取', color: 'text-amber-300' };
+            return { text: '高卡・能量滿滿', color: 'text-rose-300' };
+        },
+        getWavePath(curve, isArea = false) {
+            const data = curve || Array(12).fill(0);
+            const maxVal = 12; const width = 100; const step = width / 11;
+            const points = data.map((val, i) => { const x = i * step; const y = 50 - ((val || 0) / maxVal) * 50; return [x, y]; });
+            if (points.length === 0) return '';
+            let d = `M ${points[0][0]},${points[0][1]}`;
+            for (let i = 0; i < points.length - 1; i++) { const p0 = points[i]; const p1 = points[i + 1]; const midX = (p0[0] + p1[0]) / 2; d += ` C ${midX},${p0[1]} ${midX},${p1[1]} ${p1[0]},${p1[1]}`; }
+            if (isArea) { d += ` V 60 H 0 Z`; }
+            return d;
+        },
+        handleHash() {
+          const hash = location.hash.replace('#', '');
+          if (hash) {
+              const target = this.fruits.find(f => f.id === hash);
+              if (target) {
+                  this.activeFruit = target;
+                  this.view = 'detail';
+                  this.trackPage('/fruit/' + target.id, '詳情-' + target.category + target.name);
+              } else {
+                  this.view = 'home';
+              }
+          } else {
+              this.view = 'home';
+          }
+        },
+        getEnergyLabel(val) { const map = { '-2': '寒 ❄️', '-1': '涼 🍃', '0': '平 😌', '1': '溫 ☀️', '2': '燥 🔥' }; return map[val] || '平 😌'; },
+        getSeasonLabel(score) { const s = Number(score) || 0; if (s >= 10) return '🔥 大盛產'; if (s >= 7) return '🌿 產季中'; if (s >= 4) return '🌱 嘗鮮期'; return '❄️ 非產季'; },
+        getCurrentScore(fruit) { const curve = fruit.curve || []; const mIndex = parseInt(this.month) - 1; return Number(curve[mIndex]) || 0; },
+        getBarColor(score) { const s = Number(score) || 0; if (s >= 10) return 'bg-rose-500'; if (s >= 7) return 'bg-emerald-500'; if (s >= 4) return 'bg-amber-400'; return 'bg-slate-100'; },
+        getSkinLabel(val) { const map = { 'Yes': '可食', 'No': '不可食', 'Bitter': '可食帶苦', 'Wax': '表皮有蠟' }; return map[val] || val || '-'; },
+        getSeedLabel(val) { const map = { 'Yes': '有籽', 'No': '不可吞', 'Swallow': '可吞食', 'None': '無籽' }; return map[val] || val || '-'; }
+      };
+    }
+  </script>
+</body>
+</html>
