@@ -122,7 +122,7 @@ export default async function FruitPage({ params }: Props) {
   const recommended = await getRecommendedFruits(fruit);
 
   return (
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-slate-50 lg:flex lg:items-center lg:justify-center lg:p-6">
           <FruitDetail 
             fruit={fruit} 
             relatedFruits={recommended} 

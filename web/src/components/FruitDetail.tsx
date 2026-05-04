@@ -162,7 +162,7 @@ export function FruitDetail({ fruit, relatedFruits = [], symptomsMetadata = [] }
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-white relative flex flex-col overflow-hidden min-h-screen font-sans">
+    <div className="flex-1 w-full h-full bg-white relative flex flex-col overflow-hidden min-h-screen font-sans lg:flex-none lg:h-[calc(100vh-3rem)] lg:min-h-0 lg:max-w-5xl lg:rounded-3xl lg:shadow-2xl">
         <div className="flex-1 overflow-y-auto no-scrollbar relative bg-white pb-24">
             {/* Header */}
             <div className="relative w-full pt-4 pb-6 px-5 overflow-hidden shrink-0 bg-gradient-to-b from-slate-50 via-slate-50 to-white">
