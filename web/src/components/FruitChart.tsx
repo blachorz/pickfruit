@@ -8,6 +8,7 @@ import { Search, HelpCircle, X, ChevronRight, MessageCircle, Loader2, CheckCircl
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useSettings } from '@/context/SettingsContext';
+import { getHighlightedParts, searchFruits } from '@/utils/fruitSearch';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -82,53 +83,18 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
       setSearchOpen(false);
   };
 
-  const searchResults = useMemo(() => {
-      if (!searchQuery.trim()) return [];
-      const q = searchQuery.toLowerCase().trim();
-      return initialFruits.filter(f => {
-          const p = f.properties || {};
-          const source = [
-              f.name,
-              p.name_en,
-              p.keywords,
-              p.relief_symptoms,
-              p.scenario,
-              p.nutritional_value,
-              p.good_for,
-              p.bad_for
-          ].join(' ').toLowerCase();
-          return source.includes(q);
-      }).slice(0, 20);
-  }, [initialFruits, searchQuery]);
+  const searchResults = useMemo(() => searchFruits(initialFruits, searchQuery, 20), [initialFruits, searchQuery]);
 
-  const getMatchResult = (fruit: Fruit) => {
-      const q = searchQuery.toLowerCase().trim();
-      const p = fruit.properties || {};
-      
-      if (p.bad_for && p.bad_for.toLowerCase().includes(q)) {
-          return { type: 'bad', label: '🙅🏻‍♀️ 禁忌', text: p.bad_for, colorClass: 'text-rose-600 bg-rose-50' };
-      }
-      if (p.good_for && p.good_for.toLowerCase().includes(q)) {
-          return { type: 'good', label: '🙆🏻‍♂️ 適宜', text: p.good_for, colorClass: 'text-emerald-600 bg-emerald-50' };
-      }
-      if (p.nutritional_value && p.nutritional_value.toLowerCase().includes(q)) {
-          return { type: 'nutri', label: '🔥 營養', text: p.nutritional_value, colorClass: 'text-orange-500 bg-orange-50' };
-      }
-      if (p.relief_symptoms && p.relief_symptoms.toLowerCase().includes(q)) {
-          return { type: 'relief', label: '🩺 功效', text: p.relief_symptoms, colorClass: 'text-indigo-500 bg-indigo-50' };
-      }
-      if (p.scenario && p.scenario.toLowerCase().includes(q)) {
-          return { type: 'scenario', label: '🎨 適合', text: p.scenario, colorClass: 'text-slate-500 bg-slate-100' };
-      }
-      return { type: 'none', label: '', text: '', colorClass: '' };
-  };
-
-  const highlightMatch = (text: string | undefined, query: string) => {
-      if (!text) return '';
-      if (!query || query.trim() === '') return text;
-      const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(${safeQuery})`, 'gi');
-      return text.replace(regex, '<span class="text-indigo-600 bg-indigo-50 font-black rounded-[2px] px-0.5">$1</span>');
+  const renderHighlightedText = (text: string | undefined) => {
+      return getHighlightedParts(text, searchQuery).map((part, index) => (
+          part.match ? (
+              <span key={`${part.text}-${index}`} className="text-indigo-600 bg-indigo-50 font-black rounded-[2px] px-0.5">
+                  {part.text}
+              </span>
+          ) : (
+              <React.Fragment key={`${part.text}-${index}`}>{part.text}</React.Fragment>
+          )
+      ));
   };
   
   // Interaction
@@ -859,7 +825,7 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                                     </div>
                                 ) : (
                                     searchResults.map(fruit => {
-                                        const match = getMatchResult(fruit);
+                                        const match = fruit.searchMatch;
                                         const curve = Array.isArray(fruit.season_curve) ? fruit.season_curve : [];
                                         const seasonScore = Number(curve[month - 1]) || 0;
 
@@ -868,12 +834,12 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                                                 <div className="w-12 h-12 rounded-full shadow-inner border border-black/5 shrink-0" style={{ backgroundColor: fruit.properties?.color || '#ccc' }}></div>
                                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-base font-black text-slate-800 shrink-0" dangerouslySetInnerHTML={{ __html: highlightMatch(fruit.name, searchQuery) }}></span>
+                                                        <span className="text-base font-black text-slate-800 shrink-0">{renderHighlightedText(fruit.name)}</span>
                                                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0", seasonScore >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400')}>
                                                             {seasonScore >= 4 ? '產季中' : '非產季'}
                                                         </span>
                                                     </div>
-                                                    <div className="text-xs text-slate-400 font-medium truncate mt-0.5" dangerouslySetInnerHTML={{ __html: highlightMatch(fruit.properties?.keywords, searchQuery) }}></div>
+                                                    <div className="text-xs text-slate-400 font-medium truncate mt-0.5">{renderHighlightedText(fruit.properties?.keywords)}</div>
                                                     
                                                     <div className="text-xs text-slate-500 line-clamp-1 mt-1 group-hover:text-indigo-600 transition-colors">
                                                         {match.type !== 'none' ? (
@@ -881,10 +847,10 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
                                                                 <span className={cn("font-bold shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-slate-100", match.colorClass)}>
                                                                     {match.label}
                                                                 </span>
-                                                                <span className="truncate" dangerouslySetInnerHTML={{ __html: highlightMatch(match.text, searchQuery) }}></span>
+                                                                <span className="truncate">{renderHighlightedText(match.text)}</span>
                                                             </span>
                                                         ) : (
-                                                            <span dangerouslySetInnerHTML={{ __html: highlightMatch(fruit.properties?.tagline || '點擊查看詳情', searchQuery) }}></span>
+                                                            <span>{renderHighlightedText(fruit.properties?.tagline || '點擊查看詳情')}</span>
                                                         )}
                                                     </div>
                                                 </div>

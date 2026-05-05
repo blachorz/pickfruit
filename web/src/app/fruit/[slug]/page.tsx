@@ -2,6 +2,16 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Fruit, supabase } from '@/utils/supabase';
 import { FruitDetail } from '@/components/FruitDetail';
+import FruitSeoContent from '@/components/FruitSeoContent';
+import {
+  buildFruitFaqJsonLd,
+  buildFruitJsonLd,
+  getFruitDescription,
+  getFruitKeywords,
+  getFruitUrl,
+  serializeJsonLd,
+  SITE_NAME,
+} from '@/utils/fruitSeo';
 
 // Revalidate every day
 export const revalidate = 86400;
@@ -93,14 +103,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('slug', slug)
     .single();
 
-  if (!fruit) return { title: '水果呷對時' };
+  if (!fruit) {
+    return {
+      title: `找不到水果 - ${SITE_NAME}`,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const typedFruit = fruit as Fruit;
+  const title = `${typedFruit.name}含糖量、GI與體質屬性 | ${SITE_NAME}`;
+  const description = getFruitDescription(typedFruit);
+  const url = getFruitUrl(typedFruit);
 
   return {
-    title: `${fruit.name} - 水果呷對時`,
-    description: fruit.properties?.tagline || `查看${fruit.name}的產季、挑選技巧與營養價值。`,
+    title,
+    description,
+    keywords: getFruitKeywords(typedFruit),
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
-      title: `${fruit.name} - 水果呷對時`,
-      description: fruit.properties?.tagline || `查看${fruit.name}的產季、挑選技巧與營養價值。`,
+      title,
+      description,
+      url,
+      siteName: SITE_NAME,
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
     },
   };
 }
@@ -120,8 +155,19 @@ export default async function FruitPage({ params }: Props) {
 
   // Recommendations
   const recommended = await getRecommendedFruits(fruit);
+  const fruitJsonLd = buildFruitJsonLd(fruit);
+  const faqJsonLd = buildFruitFaqJsonLd(fruit);
 
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(fruitJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+      />
       <main className="min-h-screen bg-slate-50 lg:flex lg:items-center lg:justify-center lg:p-6">
           <FruitDetail 
             fruit={fruit} 
@@ -129,5 +175,7 @@ export default async function FruitPage({ params }: Props) {
             symptomsMetadata={(symptomsRes.data || []) as { name: string; slug: string }[]}
           />
       </main>
+      <FruitSeoContent fruit={fruit} />
+    </>
   );
 }

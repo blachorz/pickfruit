@@ -3,10 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider } from "@/context/SettingsContext";
 import GlobalFABs from "@/components/GlobalFABs";
+import { getSiteUrl } from "@/utils/fruitSeo";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "水果呷對時 🍎",
   description: "跟著季節吃，最對味",
 };

@@ -618,7 +618,7 @@ export function FruitDetail({ fruit, relatedFruits = [], symptomsMetadata = [] }
                     <div className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/50 border border-slate-100/50 backdrop-blur-sm shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:scale-105 group cursor-default">
                         <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">Made with <span className="text-[10px] animate-pulse">❤️</span> by <span className="font-black text-slate-600">Mike</span></span>
                         <span className="w-0.5 h-2 bg-slate-300 rounded-full"></span>
-                        <a href="mailto:blachorz.m@gmail.com" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">✉️ <span className="underline decoration-slate-200 underline-offset-2 group-hover:decoration-indigo-200">Contact</span></a>
+                        <a href="mailto:blachorz.m@gmail.com" className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">✉️ <span className="underline decoration-slate-200 underline-offset-2 group-hover:decoration-indigo-200">Contact</span></a>
                     </div>
                 </div>
 
