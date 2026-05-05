@@ -38,6 +38,12 @@ interface FruitChartProps {
   initialFruits: Fruit[];
 }
 
+declare global {
+  interface Window {
+    dataLayer?: Array<Record<string, unknown>>;
+  }
+}
+
 export default function FruitChart({ initialFruits }: FruitChartProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -54,6 +60,24 @@ export default function FruitChart({ initialFruits }: FruitChartProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [triviaFruit, setTriviaFruit] = useState<Fruit & { emoji?: string } | null>(null);
+
+  // 追蹤站內搜尋 (Debounced)
+  useEffect(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
+
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'site_search',
+          search_term: trimmedQuery,
+        });
+      }
+    }, 1000); // 停止輸入 1 秒後才發送，避免洗版
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // UI State (FABs)
   const { largeMode } = useSettings();
