@@ -114,7 +114,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const typedFruit = fruit as Fruit;
-  const title = `${typedFruit.name}含糖量、GI與體質屬性 | ${SITE_NAME}`;
+  const title = `${typedFruit.name}含糖量、GI與體質屬性`;
+  const socialTitle = `${title} | ${SITE_NAME}`;
   const description = getFruitDescription(typedFruit);
   const url = getFruitUrl(typedFruit);
 
@@ -126,7 +127,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical: url,
     },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url,
       siteName: SITE_NAME,
@@ -134,7 +135,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary',
-      title,
+      title: socialTitle,
       description,
     },
   };

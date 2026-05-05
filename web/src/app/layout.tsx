@@ -4,14 +4,47 @@ import Script from "next/script";
 import "./globals.css";
 import { SettingsProvider } from "@/context/SettingsContext";
 import GlobalFABs from "@/components/GlobalFABs";
-import { getSiteUrl } from "@/utils/fruitSeo";
+import {
+  getCanonicalUrl,
+  getSiteUrl,
+  SITE_AUTHOR,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+} from "@/utils/fruitSeo";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "水果呷對時 🍎",
-  description: "跟著季節吃，最對味",
+  applicationName: SITE_NAME,
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: SITE_AUTHOR }],
+  creator: SITE_AUTHOR,
+  publisher: SITE_NAME,
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: getCanonicalUrl('/'),
+    siteName: SITE_NAME,
+    locale: 'zh_TW',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 const GTM_ID = "GTM-W5ZD5SLT";

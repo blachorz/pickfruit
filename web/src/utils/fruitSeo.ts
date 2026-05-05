@@ -2,6 +2,21 @@ import { Fruit } from '@/utils/supabase';
 
 export const SITE_NAME = '水果呷對時';
 export const PRODUCTION_SITE_URL = 'https://pickfruit.app';
+export const SITE_AUTHOR = 'Mike';
+export const SITE_TITLE = `${SITE_NAME}｜台灣水果產季、甜度與食養指南`;
+export const SITE_DESCRIPTION = '查詢台灣水果產季、甜度、GI 值、寒熱屬性與挑選建議，依月份找到現在最適合吃的水果。';
+export const SITE_KEYWORDS = [
+  '水果呷對時',
+  '台灣水果',
+  '水果產季',
+  '當季水果',
+  '水果甜度',
+  '水果GI值',
+  '水果熱量',
+  '水果挑選',
+  '水果保存',
+  '食養水果',
+];
 
 type FaqItem = {
   question: string;
@@ -22,12 +37,21 @@ export function getSiteUrl() {
   return (explicitUrl || vercelUrl || fallbackUrl).replace(/\/$/, '');
 }
 
+export function getCanonicalUrl(path = '/') {
+  if (/^https?:\/\//.test(path)) {
+    return path.replace(/\/$/, '');
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${getSiteUrl()}${normalizedPath}`;
+}
+
 export function getFruitPath(fruit: Pick<Fruit, 'id' | 'slug'>) {
   return `/fruit/${fruit.slug || fruit.id}`;
 }
 
 export function getFruitUrl(fruit: Pick<Fruit, 'id' | 'slug'>) {
-  return `${getSiteUrl()}${getFruitPath(fruit)}`;
+  return getCanonicalUrl(getFruitPath(fruit));
 }
 
 export function getEnergyText(value: number | undefined) {

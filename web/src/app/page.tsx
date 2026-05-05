@@ -1,8 +1,40 @@
+import type { Metadata } from 'next';
 import { supabase } from '@/utils/supabase';
 import FruitChart from '@/components/FruitChart';
+import {
+  getCanonicalUrl,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+} from '@/utils/fruitSeo';
 
 // Revalidate every hour
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: {
+    absolute: SITE_TITLE,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: getCanonicalUrl('/'),
+    siteName: SITE_NAME,
+    locale: 'zh_TW',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+};
 
 export default async function Home() {
   const { data: fruits, error } = await supabase

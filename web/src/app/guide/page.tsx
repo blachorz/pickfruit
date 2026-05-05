@@ -1,13 +1,42 @@
 import { Metadata } from 'next';
 import { supabase } from '@/utils/supabase';
 import FruitGuide from '@/components/FruitGuide';
+import { getCanonicalUrl, SITE_KEYWORDS, SITE_NAME } from '@/utils/fruitSeo';
 
 // Revalidate every day
 export const revalidate = 86400;
 
+const guideTitle = '挑選指南';
+const guideSocialTitle = `${guideTitle} | ${SITE_NAME}`;
+const guideDescription = '不知道該吃什麼？透過生活情境、身體狀態與營養需求，找到最適合的當季水果挑選建議。';
+
 export const metadata: Metadata = {
-  title: '挑選指南 - 水果呷對時',
-  description: '不知道該吃什麼？透過「生活情調」或「對症下藥」幫您找到最適合的當季水果。',
+  title: guideTitle,
+  description: guideDescription,
+  keywords: [
+    ...SITE_KEYWORDS,
+    '水果挑選指南',
+    '當季水果推薦',
+    '症狀水果',
+    '水果營養',
+    '生活情境水果',
+  ],
+  alternates: {
+    canonical: '/guide',
+  },
+  openGraph: {
+    title: guideSocialTitle,
+    description: guideDescription,
+    url: getCanonicalUrl('/guide'),
+    siteName: SITE_NAME,
+    locale: 'zh_TW',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: guideSocialTitle,
+    description: guideDescription,
+  },
 };
 
 export default async function GuidePage() {
