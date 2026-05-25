@@ -169,7 +169,7 @@ export default async function FruitPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
-      <main className="min-h-screen bg-slate-50 lg:flex lg:items-center lg:justify-center lg:p-6">
+      <main className="min-h-screen bg-slate-50 lg:flex lg:min-h-0 lg:items-start lg:justify-center lg:p-6 lg:pb-4">
           <FruitDetail 
             fruit={fruit} 
             relatedFruits={recommended} 

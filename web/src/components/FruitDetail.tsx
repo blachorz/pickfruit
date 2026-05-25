@@ -162,8 +162,8 @@ export function FruitDetail({ fruit, relatedFruits = [], symptomsMetadata = [] }
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-white relative flex flex-col overflow-hidden min-h-screen font-sans lg:flex-none lg:h-[calc(100vh-3rem)] lg:min-h-0 lg:max-w-5xl lg:rounded-3xl lg:shadow-2xl">
-        <div className="flex-1 overflow-y-auto no-scrollbar relative bg-white pb-24">
+    <div className="flex-1 w-full h-full bg-white relative flex flex-col overflow-hidden min-h-screen font-sans lg:flex-none lg:h-auto lg:max-h-[calc(100vh-3rem)] lg:min-h-0 lg:max-w-5xl lg:rounded-3xl lg:shadow-2xl">
+        <div className="flex-1 overflow-y-auto no-scrollbar relative bg-white pb-20 lg:pb-4">
             {/* Header */}
             <div className="relative w-full pt-4 pb-6 px-5 overflow-hidden shrink-0 bg-gradient-to-b from-slate-50 via-slate-50 to-white">
                 <button onClick={handleBack} className="absolute top-4 left-4 bg-white/60 backdrop-blur-md p-2 rounded-full shadow-sm hover:bg-white transition z-50 active:scale-95 border border-white/50">
@@ -614,7 +614,7 @@ export function FruitDetail({ fruit, relatedFruits = [], symptomsMetadata = [] }
                 )}
                 
                 {/* 🔥 Footer Signature */}
-                <div className="mt-8 mb-6 text-center select-text">
+                <div className="mt-5 mb-2 text-center select-text lg:mt-4 lg:mb-0">
                     <div className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/50 border border-slate-100/50 backdrop-blur-sm shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:scale-105 group cursor-default">
                         <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">Made with <span className="text-[10px] animate-pulse">❤️</span> by <span className="font-black text-slate-600">Mike</span></span>
                         <span className="w-0.5 h-2 bg-slate-300 rounded-full"></span>
@@ -622,7 +622,7 @@ export function FruitDetail({ fruit, relatedFruits = [], symptomsMetadata = [] }
                     </div>
                 </div>
 
-                <div className="h-12"></div>
+                <div className="h-8 lg:hidden"></div>
             </div>
         </div>
     </div>

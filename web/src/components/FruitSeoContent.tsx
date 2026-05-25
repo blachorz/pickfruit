@@ -24,7 +24,7 @@ export default function FruitSeoContent({ fruit }: FruitSeoContentProps) {
   ]);
 
   return (
-    <section className="bg-slate-50 px-6 pb-16 pt-8 text-slate-700">
+    <section className="bg-slate-50 px-6 pb-16 pt-4 text-slate-700 lg:pt-2">
       <div className="mx-auto w-full max-w-5xl space-y-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm lg:p-8">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">Fruit Knowledge Base</p>
